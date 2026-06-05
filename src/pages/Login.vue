@@ -17,7 +17,7 @@
 
 <template>
     <div class="form-signin m-auto">
-        <img class="mb-4" src="/puzzle.png" alt="" width="42" height="42" />
+        <img class="mb-4" src="/puzzle.jpg" alt="" width="42" height="42" />
         <h1 class="h3 mb-3 fw-normal">Please log in</h1>
         <div class="form-floating">
             <input type="username" class="form-control" id="username" placeholder="name@example.com" v-model="payload.username" />

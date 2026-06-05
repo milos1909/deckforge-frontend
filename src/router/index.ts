@@ -1,14 +1,15 @@
-import Set from '@/pages/Set.vue'
 import Home from '@/pages/Home.vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import Card from '@/pages/Card.vue'
 import Login from '@/pages/Login.vue'
 import Signup from '@/pages/Signup.vue'
 import Verify from '@/pages/Verify.vue'
 import Cart from '@/pages/Cart.vue'
 import User from '@/pages/User.vue'
-import Catalogue from '@/pages/Catalogue.vue'
 import Invoice from '@/pages/Invoice.vue'
+import CardDetails from '@/pages/CardDetails.vue'
+import SetDetails from '@/pages/SetDetails.vue'
+import SetShop from '@/pages/SetShop.vue'
+import CardCatalogue from '@/pages/CardCatalogue.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,24 +22,31 @@ const router = createRouter({
       }
     },
     {
+      path: '/shop',
+      component: SetShop,
+      meta: {
+        title: 'Shop'
+      }
+    },
+    {
       path: '/set/:set_name',
-      component: Set,
+      component: SetDetails,
       meta: {
         title: 'Set'
       }
     },
     {
       path: '/card/:id',
-      component: Card,
+      component: CardDetails,
       meta: {
-        title: 'Card'
+        title: 'Card Details'
       }
     },
     {
-      path: '/catalogue',
-      component: Catalogue,
+      path: '/card-catalogue',
+      component: CardCatalogue,
       meta: {
-        title: 'Catalogue'
+        title: 'Card Catalogue'
       }
     },
     {
@@ -92,7 +100,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.meta.title) {
-    document.title = `${to.meta.title} - Yu-Gi-Oh! Shop`
+    document.title = `${to.meta.title} - DeckForge`
   }
 
   next()

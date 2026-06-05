@@ -21,7 +21,7 @@
 
 <template>
     <div class="form-signin m-auto">
-        <img class="mb-4" src="/puzzle.png" alt="" width="42" height="42" />
+        <img class="mb-4" src="/puzzle.jpg" alt="" width="42" height="42" />
         <h1 class="h3 mb-3 fw-normal">Verify your email</h1>
         <div class="alert alert-warning" role="alert">
             The verification code has been sent to {{ email ?? 'your email' }} adress

@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { useRoute } from 'vue-router';
   import { useAuth } from './hooks/auth.hook';
-  import { AuthService } from './services/auth.service';
 
   const year = new Date().getFullYear()
   const { logout, auth } = useAuth()
@@ -13,14 +12,20 @@
     <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
       <div class="container">
         <RouterLink class="navbar-brand" to="/"> 
-          <img src="/puzzle.png" alt="Logo" width="32" height="32"/>
-          Yu-Gi-Oh! Shop
+          <img src="/puzzle.jpg" alt="Logo" width="32" height="32"/>
+          DECKForge
         </RouterLink>
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-2">
           <li class="nav-item">
-            <RouterLink class="nav-link active" to="/catalogue">
+            <RouterLink class="nav-link active" to="/card-catalogue">
               <i class="fa-solid fa-layer-group"></i>
               Card Catalogue
+            </RouterLink>
+          </li>
+          <li class="nav-item">
+            <RouterLink class="nav-link active" to="/shop">
+              <i class="fa-solid fa-basket-shopping"></i>
+              Set Shop
             </RouterLink>
           </li>
         </ul>
@@ -63,7 +68,7 @@
       <RouterView/>
     </main>
     <footer class="footer d-flex justify-content-center align-items-center py-3 border-top bg-dark text-light">
-      <img src="/puzzle.png" alt="Logo" width="32" height="32" /> &copy; {{ year }} Yu-Gi-Oh! Shop 
+      <img src="/puzzle.jpg" alt="Logo" width="32" height="32" /> &copy; {{ year }} DeckForge 
     </footer>
   </div>
 </template>
