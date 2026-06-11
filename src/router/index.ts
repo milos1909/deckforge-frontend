@@ -10,6 +10,7 @@ import CardDetails from '@/pages/CardDetails.vue'
 import SetDetails from '@/pages/SetDetails.vue'
 import SetShop from '@/pages/SetShop.vue'
 import CardCatalogue from '@/pages/CardCatalogue.vue'
+import DeckBuilder from '@/pages/DeckBuilder.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,13 @@ const router = createRouter({
       component: Home,
       meta: {
         title: 'Home'
+      }
+    },
+    {
+      path: '/deckbuilder',
+      component: DeckBuilder,
+      meta: {
+        title: 'Deck Builder'
       }
     },
     {

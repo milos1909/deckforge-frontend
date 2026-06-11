@@ -17,6 +17,12 @@
         </RouterLink>
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-2">
           <li class="nav-item">
+            <RouterLink class="nav-link active" to="/deckbuilder">
+              <i class="fa-solid fa-hammer"></i>
+              Deck Builder
+            </RouterLink>
+          </li>
+          <li class="nav-item">
             <RouterLink class="nav-link active" to="/card-catalogue">
               <i class="fa-solid fa-layer-group"></i>
               Card Catalogue

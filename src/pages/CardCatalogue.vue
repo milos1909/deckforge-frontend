@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import Loading from '@/components/loading.vue';
+    import Loading from '@/components/Loading.vue';
     import { getCardImage } from '@/helpers/image';
     import type { CardModel } from '@/models/card.model';
     import { DataService } from '@/services/data.service';
@@ -21,7 +21,7 @@
         try {
             const offset = ((currentPage.value - 1) * PAGE_SIZE)
             
-            const rsp = await DataService.getCards(search.value, offset)
+            const rsp = await DataService.getCards(search.value, PAGE_SIZE, offset)
 
             cards.value = rsp.data.cards
             totalResults.value = rsp.data.total  

@@ -84,10 +84,11 @@ export class DataService {
             })
     }
 
-    static async getCards(search: string, offset: number) { 
+    static async getCards(search: string, limit: number, offset: number) { 
         return await client.get('/card', {
                 params: {
                     name: search,
+                    limit,
                     offset
                 }
             })

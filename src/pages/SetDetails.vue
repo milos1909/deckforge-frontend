@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import Loading from '@/components/loading.vue'
+    import Loading from '@/components/Loading.vue'
     import { getCardImage, getSetImage } from '@/helpers/image'
     import { useAuth } from '@/hooks/auth.hook'
     import type { CardModel } from '@/models/card.model'

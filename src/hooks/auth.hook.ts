@@ -1,7 +1,7 @@
 import type { AuthModel } from "@/models/auth.model";
 import { AuthService } from "@/services/auth.service";
 import { DataService } from "@/services/data.service";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 const auth = ref<AuthModel | null>(AuthService.getAuth())

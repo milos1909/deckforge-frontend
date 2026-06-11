@@ -1,5 +1,5 @@
     <script setup lang="ts">
-        import Loading from '@/components/loading.vue';
+        import Loading from '@/components/Loading.vue';
         import { getSetImage, setFallbackImage } from '@/helpers/image';
         import type { SetModel } from '@/models/set.model';
         import { DataService } from '@/services/data.service';
@@ -66,22 +66,11 @@
                     <i class="fa-solid fa-magnifying-glass search-icon"></i>
                     <input v-model="search" @input="loadSets" type="text" class="form-control search-bar" placeholder="Search sets...">
                 </div>
-                <div class="d-flex gap-1 align-items-center">
-                    <button class="btn btn-outline-primary text-nowrap" @click="previousPage" :disabled="currentPage === 1">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <span class="text-nowrap">
-                        Page {{ currentPage }}/{{ totalPages }} of {{ totalResults }} total sets
-                    </span>
-                    <button class="btn btn-outline-primary text-nowrap" @click="nextPage" :disabled="sets.length < PAGE_SIZE">
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
             </div>
             <div class="d-flex flex-wrap gap-1 justify-content-center" v-if="sets.length > 0">
                 <RouterLink
                     v-for="set in sets"
-                    :key="set.set_code"
+                    :key="set.set_name"
                     :to="`/set/${set.set_name}`"
                     class="card text-center text-decoration-none text-reset set-card"
                 >
@@ -110,6 +99,27 @@
             </div>
             <div v-else class="empty-state">
                 <h4>No matching sets found</h4>
+            </div>
+            <div class="d-flex gap-2 justify-content-center align-items-center mt-4" v-if="sets.length > 0">
+                <button
+                    class="btn btn-outline-primary text-nowrap"
+                    @click="previousPage"
+                    :disabled="currentPage === 1"
+                >
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+
+                <span class="text-nowrap">
+                    Page {{ currentPage }}/{{ totalPages }} of {{ totalResults }} total sets
+                </span>
+
+                <button
+                    class="btn btn-outline-primary text-nowrap"
+                    @click="nextPage"
+                    :disabled="currentPage === totalPages"
+                >
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
             </div>
         </div>
     </template>

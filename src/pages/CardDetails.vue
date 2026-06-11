@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import Loading from '@/components/loading.vue'
+    import Loading from '@/components/Loading.vue'
     import type { CardModel } from '@/models/card.model'
     import type { SetModel } from '@/models/set.model'
     import { DataService } from '@/services/data.service'
@@ -168,6 +168,4 @@
     white-space: pre-line;
     line-height: 1.7;
 }
-
-
 </style>
