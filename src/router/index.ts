@@ -75,7 +75,7 @@ const router = createRouter({
       path: '/verify',
       component: Verify,
       meta: {
-        title: 'Email verification'
+        title: 'Email Verification'
       }
     },
     {
@@ -108,7 +108,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.meta.title) {
-    document.title = `${to.meta.title} - DeckForge`
+    document.title = `${to.meta.title} - DECKForge`
   }
 
   next()

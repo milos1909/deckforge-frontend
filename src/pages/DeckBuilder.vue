@@ -120,9 +120,9 @@ async function saveDeck() {
   const payload = {
     name: deckName.value,
     cards: [
-      ...mainDeck.value.map(card => ({ card_id: card.id, type: 'main' })),
-      ...extraDeck.value.map(card => ({ card_id: card.id, type: 'extra' })),
-      ...sideDeck.value.map(card => ({ card_id: card.id, type: 'side' }))
+      ...mainDeck.value.map(card => ({ id: card.id, type: 'main' })),
+      ...extraDeck.value.map(card => ({ id: card.id, type: 'extra' })),
+      ...sideDeck.value.map(card => ({ id: card.id, type: 'side' }))
     ]
   }
 
