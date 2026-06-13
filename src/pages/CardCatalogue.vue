@@ -1,6 +1,7 @@
 <script setup lang="ts">
+    import CardTooltip from '@/components/CardTooltip.vue';
     import Loading from '@/components/Loading.vue';
-    import { getCardImage } from '@/helpers/image';
+    import { getCardImage, setFallbackImage } from '@/helpers/image';
     import type { CardModel } from '@/models/card.model';
     import { DataService } from '@/services/data.service';
     import { computed, onMounted, ref, watch } from 'vue';
@@ -10,9 +11,9 @@
     const totalResults = ref(0)
     const search = ref('')
     const currentPage = ref(1)
-    const PAGE_SIZE = 24
+    const PAGE_SIZE = 30
     const totalPages = computed(() =>
-        Math.ceil(totalResults.value / PAGE_SIZE)
+        Math.max(1, Math.ceil(totalResults.value / PAGE_SIZE))
     )
     
     async function loadCards() {
@@ -50,109 +51,154 @@
 </script>
 
 <template>
-    <section class="banner d-flex justify-content-center align-items-center">
-        <div class="text-center">
-            <h1 class="display-3 fw-bold text-white">
-                Card Catalogue
-            </h1>
-            <p class="lead text-white">
-                Dive into the full Yu-Gi-Oh! card library and discover new combos, archetypes, and strategies!
-            </p>
-        </div>
-    </section>
-    <div class="container mt-3 mb-3 page-content">
-        <div class="d-flex mb-3 align-items-center justify-content-center controls">
-            <div class="search-wrapper">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input v-model="search" @keyup.enter="loadCards" type="text" class="form-control search-bar" placeholder="Search cards...">
+    <div class="catalogue-page">
+        <div class="container page-content">
+            <div class="catalogue-header">
+                <div>
+                    <h1 class="h2 fw-bold mb-1">Card Catalogue</h1>
+                    <p class="text-secondary mb-0">Search, preview, and open any card in the library.</p>
+                </div>
             </div>
-            <div class="d-flex gap-1 align-items-center">
-                <button class="btn btn-outline-primary text-nowrap" @click="previousPage" :disabled="currentPage === 1">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-                <span class="text-nowrap">
-                    Page {{ currentPage }}/{{ totalPages }} of {{ totalResults }} total cards
-                </span>
-                <button class="btn btn-outline-primary text-nowrap" @click="nextPage" :disabled="cards.length < PAGE_SIZE">
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
+
+            <div class="catalogue-toolbar">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input v-model="search" @keyup.enter="loadCards" type="text" class="form-control search-bar" placeholder="Search cards...">
+                    <button class="btn btn-primary search-button" @click="loadCards">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="pagination-controls">
+                    <button class="btn btn-outline-primary btn-sm" @click="previousPage" :disabled="currentPage === 1">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <span class="small text-secondary">
+                        Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} cards
+                    </span>
+                    <button class="btn btn-outline-primary btn-sm" @click="nextPage" :disabled="cards.length < PAGE_SIZE">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
-        </div>
-        <div class="row g-4" v-if="cards.length > 0">
-            <div v-for="card in cards" :key="card.id" class="col-lg-auto">
-                <RouterLink :to="`/card/${card.id}`">
-                    <img :src="getCardImage(card.id)" class="img-fluid rounded shadow-sm card-image">
-                </RouterLink>
+
+            <div class="catalogue-grid" v-if="cards.length > 0">
+                <CardTooltip v-for="card in cards" :key="card.id" :card="card">
+                    <RouterLink :to="`/card/${card.id}`" class="card-link">
+                        <img :src="getCardImage(card.id)" :alt="card.name" class="card-image" @error="setFallbackImage">
+                    </RouterLink>
+                </CardTooltip>
             </div>
-        </div>
-        <div v-else-if="loading" class="empty-state">
-            <Loading />
-        </div>
-        <div v-else class="empty-state">
-            <h4>No matching cards found</h4>
+
+            <div v-else-if="loading" class="empty-state">
+                <Loading />
+            </div>
+
+            <div v-else class="empty-state">
+                <div class="text-center">
+                    <i class="fa-solid fa-magnifying-glass empty-icon"></i>
+                    <h4 class="fw-bold mb-1">No matching cards found</h4>
+                    <p class="text-secondary mb-0">Try another card name or keyword.</p>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <style scoped>
+    .catalogue-page {
+        flex: 1;
+        background: #f5f6f8;
+    }
+
     .page-content {
         display: flex;
         flex-direction: column;
-        flex: 1
+        flex: 1;
+        padding-bottom: 2.25rem;
+        padding-top: 2rem;
     }
 
-    .banner {
-      height: 53vh;
-
-      background:
-          linear-gradient(
-              rgba(0,0,0,0.5),
-              rgba(0,0,0,0.5)
-          ),
-          url('/monsters_banner.jpg');
-
-      background-size: cover;
-      background-position: center;
+    .catalogue-header {
+        align-items: end;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-bottom: 1rem;
     }
 
-    .controls {
-        gap: 5rem
+    .catalogue-toolbar {
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #dfe4ec;
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(18, 29, 43, 0.06);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+        padding: 1rem;
     }
 
     .search-wrapper {
+        display: grid;
+        flex: 1 1 320px;
+        gap: 0.5rem;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        max-width: 520px;
         position: relative;
     }
 
     .search-icon {
         position: absolute;
-
         left: 12px;
         top: 50%;
-
         transform: translateY(-50%);
-
-        color: gray;
+        color: #64748b;
+        z-index: 1;
     }
 
     .search-bar {
-        width: 300px;
         padding-left: 2.5rem;
     }
 
-    .content {
-        flex: 1
+    .search-button {
+        width: 44px;
+        padding-left: 0;
+        padding-right: 0;
     }
-    
-    .card-image {
-        width: 100%;
-        max-width: 140px;
 
-        cursor: pointer;
-        transition: .2s;
+    .pagination-controls {
+        align-items: center;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .catalogue-grid {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    }
+
+    .card-link {
+        display: block;
+    }
+
+    .card-image {
+        aspect-ratio: 0.6875;
+        border-radius: 4px;
+        display: block;
+        object-fit: cover;
+        width: 100%;
+        transition: transform 0.18s, box-shadow 0.18s;
     }
 
     .card-image:hover {
-        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.24);
+        transform: translateY(-3px);
     }
 
     .empty-state {
@@ -160,5 +206,26 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        min-height: 320px;
+    }
+
+    .empty-icon {
+        color: #94a3b8;
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+    }
+
+    @media (max-width: 575.98px) {
+        .page-content {
+            padding-top: 1.25rem;
+        }
+
+        .pagination-controls {
+            width: 100%;
+        }
+
+        .catalogue-grid {
+            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+        }
     }
 </style>

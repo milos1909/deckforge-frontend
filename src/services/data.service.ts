@@ -75,10 +75,13 @@ export class DataService {
         }
     }
 
-    static async getSets(search: string, offset: number) { 
+    static async getSets(name: string, sortDirection: 'ASC' | 'DESC', maxPrice: number, limit: number, offset: number) { 
         return await client.get('/set', {
                 params: {
-                    name: search,
+                    name,
+                    sortDirection,
+                    maxPrice,
+                    limit,
                     offset
                 }
             })

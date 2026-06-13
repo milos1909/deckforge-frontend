@@ -277,6 +277,7 @@ onMounted(loadCards)
 <style scoped>
 .deck-builder-page {
   flex: 1;
+  background: #f5f6f8;
 }
 
 .builder-panel {
