@@ -87,18 +87,39 @@ export class DataService {
             })
     }
 
-    static async getCards(search: string, limit: number, offset: number) { 
+    static async getCards(search: string, limit: number, offset: number, filters: any = {}) { 
         return await client.get('/card', {
                 params: {
                     name: search,
                     limit,
-                    offset
+                    offset,
+                    ...filters
                 }
             })
     }
 
-    static async getSetByName(set_name: string) {
-        return await client.get(`/set/${set_name}`)
+    static async getCardTypes() {
+        return await client.get('/card/types')
+    }
+
+    static async getCardArchetypes() {
+        return await client.get('/card/archetypes')
+    }
+
+    static async getCardRaces(type: string) {
+        return await client.get('/card/races', {
+            params: {
+                type
+            }
+        })
+    }
+
+    static async getCardAttributes() {
+        return await client.get('/card/attributes')
+    }
+
+    static async getSetByName(setName: string) {
+        return await client.get(`/set/${setName}`)
     }
 
     static async getCardById(id: number) {

@@ -1,6 +1,6 @@
 import type { AuthModel } from "@/models/auth.model";
 
-const AUTH_KEY = 'yugioh_auth'
+const AUTH_KEY = 'deckforge_auth'
 
 export class AuthService {
     static getAuth(): AuthModel {

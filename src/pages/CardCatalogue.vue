@@ -2,52 +2,65 @@
     import CardTooltip from '@/components/CardTooltip.vue';
     import Loading from '@/components/Loading.vue';
     import { getCardImage, setFallbackImage } from '@/helpers/image';
-    import type { CardModel } from '@/models/card.model';
-    import { DataService } from '@/services/data.service';
-    import { computed, onMounted, ref, watch } from 'vue';
-    
-    const cards = ref<CardModel[]>([])
-    const loading = ref(false)
-    const totalResults = ref(0)
-    const search = ref('')
-    const currentPage = ref(1)
+    import { useCardSearch } from '@/hooks/cardSearch.hook';
+    import { onMounted, watch } from 'vue';
+
     const PAGE_SIZE = 30
-    const totalPages = computed(() =>
-        Math.max(1, Math.ceil(totalResults.value / PAGE_SIZE))
-    )
     
-    async function loadCards() {
-        loading.value = true
+    const {
+        cards,
+        loading,
+        currentPage,
+        totalResults,
+        totalPages,
+        search,
+        selectedType,
+        selectedArchetype,
+        selectedRace,
+        selectedAttribute,
+        selectedLevel,
+        selectedLinkval,
+        selectedScale,
+        selectedSortBy,
+        selectedSortDirection,
+        showAdvancedFilters,
+        cardTypes,
+        archetypes,
+        races,
+        attributes,
+        levels,
+        linkValues,
+        scales,
+        hasSelectedType,
+        isMonster,
+        isLink,
+        isPendulum,
+        isSimpleType,
+        sortOptions,
+        sortOptionLabel,
+        loadCards,
+        loadFilterOptions,
+        loadRaces,
+        applyFilters,
+        resetFilters,
+        resetTypeSpecificFilters,
+        nextPage,
+        previousPage
+    } = useCardSearch(PAGE_SIZE)
 
-        try {
-            const offset = ((currentPage.value - 1) * PAGE_SIZE)
-            
-            const rsp = await DataService.getCards(search.value, PAGE_SIZE, offset)
-
-            cards.value = rsp.data.cards
-            totalResults.value = rsp.data.total  
-        } finally {
-            loading.value = false
-        }
-    }
-
-    function nextPage() {
-      currentPage.value++
-    }
-
-    function previousPage() {
-        if (currentPage.value > 1) {
-            currentPage.value--
-        }
-    }
-
-    watch(search, () => {
-        currentPage.value = 1
+    watch(selectedType, async () => {
+        resetTypeSpecificFilters()
+        showAdvancedFilters.value = false
+        await loadRaces()
+        await applyFilters()
     })
 
     watch(currentPage, loadCards)
 
-    onMounted(loadCards)
+    onMounted(async () => {
+        await loadFilterOptions()
+        await loadCards()
+    })
 </script>
 
 <template>
@@ -61,45 +74,145 @@
             </div>
 
             <div class="catalogue-toolbar">
-                <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input v-model="search" @keyup.enter="loadCards" type="text" class="form-control search-bar" placeholder="Search cards...">
-                    <button class="btn btn-primary search-button" @click="loadCards">
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
-
-                <div class="pagination-controls">
-                    <button class="btn btn-outline-primary btn-sm" @click="previousPage" :disabled="currentPage === 1">
-                        <i class="fa-solid fa-arrow-left"></i>
-                    </button>
-                    <span class="small text-secondary">
-                        Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} cards
+                <div class="input-group catalogue-search">
+                    <span class="input-group-text">
+                        <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
-                    <button class="btn btn-outline-primary btn-sm" @click="nextPage" :disabled="cards.length < PAGE_SIZE">
+                    <input v-model="search" @keyup.enter="applyFilters" type="text" class="form-control" placeholder="Search cards...">
+                    <button class="btn btn-primary" @click="applyFilters">
                         <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="filter-controls">
+                    <label class="filter-field">
+                        <span>Sort by</span>
+                        <select v-model="selectedSortBy" class="form-select form-select-sm filter-select sort-select" @change="applyFilters">
+                            <option value="">Default</option>
+                            <option v-for="sortOption in sortOptions" :key="sortOption" :value="sortOption">{{ sortOptionLabel(sortOption) }}</option>
+                        </select>
+                    </label>
+
+                    <label class="filter-field">
+                        <select v-model="selectedSortDirection" class="form-select form-select-sm direction-select" :disabled="!selectedSortBy" @change="applyFilters">
+                            <option value="DESC">DESC</option>
+                            <option value="ASC">ASC</option>
+                        </select>
+                    </label>
+
+                    <label class="filter-field">
+                        <span>Type</span>
+                        <select v-model="selectedType" class="form-select form-select-sm filter-select">
+                            <option value="">All types</option>
+                            <option v-for="type in cardTypes" :key="type" :value="type">{{ type }}</option>
+                        </select>
+                    </label>
+
+                    <label class="filter-field">
+                        <span>Archetype</span>
+                        <select v-model="selectedArchetype" class="form-select form-select-sm filter-select" @change="applyFilters">
+                            <option value="">All archetypes</option>
+                            <option v-for="archetype in archetypes" :key="archetype" :value="archetype">{{ archetype }}</option>
+                        </select>
+                    </label>
+
+                    <button
+                        class="btn btn-outline-primary btn-sm text-nowrap"
+                        :disabled="!hasSelectedType"
+                        @click="showAdvancedFilters = !showAdvancedFilters"
+                        aria-label="More filters"
+                        title="More filters"
+                    >
+                        <i class="fa-solid fa-sliders"></i>
+                        More filters
+                    </button>
+
+                    <button class="btn btn-outline-secondary btn-sm icon-filter-button" @click="resetFilters" aria-label="Reset filters" title="Reset filters">
+                        <i class="fa-solid fa-filter-circle-xmark"></i>
                     </button>
                 </div>
             </div>
 
-            <div class="catalogue-grid" v-if="cards.length > 0">
-                <CardTooltip v-for="card in cards" :key="card.id" :card="card">
-                    <RouterLink :to="`/card/${card.id}`" class="card-link">
-                        <img :src="getCardImage(card.id)" :alt="card.name" class="card-image" @error="setFallbackImage">
-                    </RouterLink>
-                </CardTooltip>
-            </div>
-
-            <div v-else-if="loading" class="empty-state">
-                <Loading />
-            </div>
-
-            <div v-else class="empty-state">
-                <div class="text-center">
-                    <i class="fa-solid fa-magnifying-glass empty-icon"></i>
-                    <h4 class="fw-bold mb-1">No matching cards found</h4>
-                    <p class="text-secondary mb-0">Try another card name or keyword.</p>
+            <div v-if="showAdvancedFilters && hasSelectedType" class="advanced-filters mb-3">
+                <div class="advanced-filter-field">
+                    <label class="form-label small text-secondary">Race</label>
+                    <select v-model="selectedRace" class="form-select form-select-sm" @change="applyFilters">
+                        <option value="">Any race</option>
+                        <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
+                    </select>
                 </div>
+
+                <template v-if="isMonster">
+                    <div class="advanced-filter-field">
+                        <label class="form-label small text-secondary">Attribute</label>
+                        <select v-model="selectedAttribute" class="form-select form-select-sm" @change="applyFilters">
+                            <option value="">Any attribute</option>
+                            <option v-for="attribute in attributes" :key="attribute" :value="attribute">{{ attribute }}</option>
+                        </select>
+                    </div>
+
+                    <div v-if="!isLink" class="advanced-filter-field">
+                        <label class="form-label small text-secondary">Level</label>
+                        <select v-model="selectedLevel" class="form-select form-select-sm" @change="applyFilters">
+                            <option value="">Any level</option>
+                            <option v-for="level in levels" :key="level" :value="level">{{ level }}</option>
+                        </select>
+                    </div>
+
+                    <div v-if="isLink" class="advanced-filter-field">
+                        <label class="form-label small text-secondary">Link rating</label>
+                        <select v-model="selectedLinkval" class="form-select form-select-sm" @change="applyFilters">
+                            <option value="">Any link rating</option>
+                            <option v-for="linkval in linkValues" :key="linkval" :value="linkval">{{ linkval }}</option>
+                        </select>
+                    </div>
+
+                    <div v-if="isPendulum" class="advanced-filter-field">
+                        <label class="form-label small text-secondary">Scale</label>
+                        <select v-model="selectedScale" class="form-select form-select-sm" @change="applyFilters">
+                            <option value="">Any scale</option>
+                            <option v-for="scale in scales" :key="scale" :value="scale">{{ scale }}</option>
+                        </select>
+                    </div>
+                </template>
+
+                <p v-if="isSimpleType" class="advanced-note mb-0">
+                    {{ selectedType }} 
+                </p>
+            </div>
+
+            <div class="catalogue-results">
+                <div class="catalogue-grid" v-if="cards.length > 0">
+                    <CardTooltip v-for="card in cards" :key="card.id" :card="card">
+                        <RouterLink :to="`/card/${card.id}`" class="card-link">
+                            <img :src="getCardImage(card.id)" :alt="card.name" class="card-image" @error="setFallbackImage">
+                        </RouterLink>
+                    </CardTooltip>
+                </div>
+
+                <div v-else-if="loading" class="empty-state">
+                    <Loading />
+                </div>
+
+                <div v-else class="empty-state">
+                    <div class="text-center">
+                        <i class="fa-solid fa-magnifying-glass empty-icon"></i>
+                        <h4 class="fw-bold mb-1">No matching cards found</h4>
+                        <p class="text-secondary mb-0">Try another card name or keyword.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pagination-controls mt-4" v-if="cards.length > 0">
+                <button class="btn btn-outline-primary btn-sm" @click="previousPage" :disabled="currentPage === 1">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <span class="small text-secondary">
+                    Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} cards
+                </span>
+                <button class="btn btn-outline-primary btn-sm" @click="nextPage" :disabled="currentPage === totalPages">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -115,7 +228,7 @@
         display: flex;
         flex-direction: column;
         flex: 1;
-        padding-bottom: 2.25rem;
+        padding-bottom: 1.25rem;
         padding-top: 2rem;
     }
 
@@ -123,7 +236,7 @@
         align-items: end;
         display: flex;
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: 0.65rem;
         justify-content: space-between;
         margin-bottom: 1rem;
     }
@@ -142,32 +255,78 @@
         padding: 1rem;
     }
 
-    .search-wrapper {
-        display: grid;
-        flex: 1 1 320px;
+    .catalogue-search {
+        flex: 1 1 230px;
+        max-width: 360px;
+    }
+
+    .filter-controls {
+        align-items: center;
+        display: flex;
+        flex: 1 1 760px;
+        flex-wrap: wrap;
         gap: 0.5rem;
-        grid-template-columns: minmax(0, 1fr) 44px;
-        max-width: 520px;
-        position: relative;
+        justify-content: flex-end;
     }
 
-    .search-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
+    .filter-field {
+        align-items: center;
+        display: flex;
+        gap: 0.4rem;
+        margin: 0;
+    }
+
+    .filter-field span {
         color: #64748b;
-        z-index: 1;
+        font-size: 0.82rem;
+        font-weight: 600;
     }
 
-    .search-bar {
-        padding-left: 2.5rem;
+    .filter-select {
+        width: 140px;
     }
 
-    .search-button {
-        width: 44px;
-        padding-left: 0;
-        padding-right: 0;
+    .sort-select {
+        width: 128px;
+    }
+
+    .direction-select {
+        width: 88px;
+    }
+
+    .icon-filter-button {
+        align-items: center;
+        display: inline-flex;
+        height: 31px;
+        justify-content: center;
+        padding: 0;
+        width: 34px;
+    }
+
+    .advanced-filters {
+        align-items: end;
+        background: #ffffff;
+        border: 1px solid #dfe4ec;
+        border-radius: 8px;
+        box-shadow: 0 10px 24px rgba(18, 29, 43, 0.04);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+        padding: 1rem;
+    }
+
+    .advanced-filter-field {
+        min-width: 150px;
+    }
+
+    .advanced-filter-field .form-label {
+        font-weight: 600;
+    }
+
+    .advanced-note {
+        color: #64748b;
+        font-size: 0.85rem;
+        padding-bottom: 0.35rem;
     }
 
     .pagination-controls {
@@ -175,6 +334,10 @@
         display: flex;
         gap: 0.5rem;
         justify-content: center;
+    }
+
+    .catalogue-results {
+        min-height: 545px;
     }
 
     .catalogue-grid {
@@ -222,6 +385,35 @@
 
         .pagination-controls {
             width: 100%;
+        }
+
+        .catalogue-search,
+        .filter-controls,
+        .filter-field,
+        .filter-select,
+        .sort-select,
+        .direction-select,
+        .advanced-filter-field {
+            max-width: none;
+            width: 100%;
+        }
+
+        .icon-filter-button {
+            flex: 1;
+            width: auto;
+        }
+
+        .filter-field {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .filter-controls {
+            justify-content: stretch;
+        }
+
+        .catalogue-results {
+            min-height: 420px;
         }
 
         .catalogue-grid {

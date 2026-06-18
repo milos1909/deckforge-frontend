@@ -37,7 +37,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/set/:set_name',
+      path: '/set/:setName',
       component: SetDetails,
       meta: {
         title: 'Set'

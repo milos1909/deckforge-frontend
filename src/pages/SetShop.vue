@@ -101,30 +101,30 @@
             </div>
 
             <div class="row g-4" v-if="sets.length > 0">
-                <div v-for="set in sets" :key="set.set_name" class="col-12 col-sm-6 col-lg-4 col-xxl-3">
+                <div v-for="set in sets" :key="set.setName" class="col-12 col-sm-6 col-lg-4 col-xxl-3">
                     <RouterLink
-                        :to="`/set/${set.set_name}`"
+                        :to="`/set/${set.setName}`"
                         class="set-card card h-100 text-decoration-none text-reset"
                     >
                         <div class="set-image-container">
                             <img
-                                :src="getSetImage(set.set_code)"
+                                :src="getSetImage(set.setCode)"
                                 class="set-image"
-                                :alt="set.set_name"
+                                :alt="set.setName"
                                 @error="setFallbackImage"
                             >
                         </div>
 
                         <div class="card-body d-flex flex-column">
-                            <h2 class="set-title">{{ set.set_name }}</h2>
-                            <p class="set-date mb-3">{{ set.tcg_date }}</p>
+                            <h2 class="set-title">{{ set.setName }}</h2>
+                            <p class="set-date mb-3">{{ set.tcgDate }}</p>
 
                             <div class="set-meta mt-auto">
                                 <span>
                                     <i class="fa-solid fa-layer-group"></i>
-                                    {{ set.num_of_cards }} cards
+                                    {{ set.numOfCards }} cards
                                 </span>
-                                <strong>{{ set.set_price }} EUR</strong>
+                                <strong>{{ set.price }} EUR</strong>
                             </div>
                         </div>
                     </RouterLink>

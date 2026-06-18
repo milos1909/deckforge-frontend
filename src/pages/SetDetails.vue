@@ -21,7 +21,7 @@
 
     const { auth, logout } = useAuth()
 
-    const set_name = route.params.set_name
+    const setName = route.params.setName
 
     const set = ref<SetModel>()
     const rarityGroups = ref<RarityGroup[]>([])
@@ -31,7 +31,7 @@
         loading.value = true
 
         try {
-            const rsp = await DataService.getSetByName(String(set_name))
+            const rsp = await DataService.getSetByName(String(setName))
 
             set.value = rsp.data.set_details
             rarityGroups.value = rsp.data.rarity_groups ?? []
@@ -40,15 +40,15 @@
         }
     }
 
-    function addToCart(set_name: string) {
+    function addToCart(setName: string) {
         if (!auth.value) {
             alert('You must be logged in in order to buy items')
             return
         }
 
-        if (!confirm(`Add ${set_name} to cart`)) return
+        if (!confirm(`Add ${setName} to cart`)) return
 
-        InvoiceService.addSetToCart(set_name)
+        InvoiceService.addSetToCart(setName)
             .then(() => router.push('/cart'))
             .catch(e => logout(e))
     }
@@ -65,36 +65,36 @@
                 <div class="row g-5 justify-content-center align-items-start">
                     <div class="col-12 col-lg-4 text-center">
                         <img
-                            :src="getSetImage(String(set?.set_code))"
-                            :alt="set?.set_name"
+                            :src="getSetImage(String(set?.setCode))"
+                            :alt="set?.setName"
                             class="set-image"
                             @error="setFallbackImage"
                         >
                     </div>
 
                     <div class="col-12 col-lg-5">
-                        <h1 class="product-title mb-4">{{ set?.set_name }}</h1>
+                        <h1 class="product-title mb-4">{{ set?.setName }}</h1>
 
                         <div class="detail-list">
                             <div class="detail-row">
                                 <strong>Set Size</strong>
-                                <span>{{ set?.num_of_cards }}</span>
+                                <span>{{ set?.numOfCards }}</span>
                             </div>
                             <div class="detail-row">
                                 <strong>Set Code</strong>
-                                <span>{{ set?.set_code }}</span>
+                                <span>{{ set?.setCode }}</span>
                             </div>
                             <div class="detail-row">
                                 <strong>Launch Date</strong>
-                                <span>{{ set?.tcg_date }}</span>
+                                <span>{{ set?.tcgDate }}</span>
                             </div>
                             <div class="detail-row">
                                 <strong>Price</strong>
-                                <span>{{ set?.set_price }} EUR</span>
+                                <span>{{ set?.price }} EUR</span>
                             </div>
                         </div>
 
-                        <button type="button" class="btn btn-success btn-lg mt-4" @click="addToCart(set!.set_name)">
+                        <button type="button" class="btn btn-success btn-lg mt-4" @click="addToCart(set!.setName)">
                             <i class="fa-solid fa-cart-shopping"></i>
                             Add to cart
                         </button>

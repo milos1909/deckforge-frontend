@@ -22,10 +22,10 @@
             card.value = rsp.data
 
             for(const set of card.value?.card_sets ?? []) {
-                const rsp = await DataService.getSetByName(set.set_name)
+                const rsp = await DataService.getSetByName(set.setName)
                 sets.value.push(rsp.data.set_details)
                 sets.value = sets.value.filter(
-                    (set, index, self) => index === self.findIndex(s => s.set_name === set.set_name)
+                    (set, index, self) => index === self.findIndex(s => s.setName === set.setName)
                 )
             }
         } finally {
@@ -120,21 +120,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="set in sets" :key="set.set_code">
+                        <tr v-for="set in sets" :key="set.setCode">
                             <td class="fw-semibold">
-                                {{ set.set_name }}
+                                {{ set.setName }}
                             </td>
                             <td>
                                 <span class="badge text-bg-secondary">
-                                    {{ set.set_code }}
+                                    {{ set.setCode }}
                                 </span>
                             </td>
                             <td>
-                                {{ Number(set.set_price).toFixed(2) }} €
+                                {{ Number(set.price).toFixed(2) }} €
                             </td>
                             <td class="text-end">
                                 <RouterLink
-                                    :to="`/set/${set.set_name}`"
+                                    :to="`/set/${set.setName}`"
                                     class="btn btn-sm btn-outline-primary"
                                 >
                                     View Details

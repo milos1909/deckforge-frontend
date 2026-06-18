@@ -257,8 +257,8 @@ function getItemTotal(item: InvoiceItemModel): number {
                                 <div class="row g-4 align-items-center">
                                     <div class="col-12 col-md-3 col-lg-2">
                                         <img
-                                            :src="getSetImage(item.set.set_code)"
-                                            :alt="item.set.set_name"
+                                            :src="getSetImage(item.set.setCode)"
+                                            :alt="item.set.setName"
                                             class="img-fluid rounded-4 shadow-sm set-image"
                                         >
                                     </div>
@@ -266,16 +266,16 @@ function getItemTotal(item: InvoiceItemModel): number {
                                     <div class="col-12 col-md-9 col-lg-7">
                                         <div class="d-flex flex-wrap gap-2 mb-2">
                                             <span class="badge text-bg-primary">
-                                                {{ item.set.set_code }}
+                                                {{ item.set.setCode }}
                                             </span>
 
                                             <span class="badge text-bg-secondary">
-                                                {{ item.set.num_of_cards }} cards
+                                                {{ item.set.numOfCards }} cards
                                             </span>
                                         </div>
 
                                         <h3 class="h4 fw-bold mb-2">
-                                            {{ item.set.set_name }}
+                                            {{ item.set.setName }}
                                         </h3>
 
                                         <div class="row g-3 small">
@@ -284,7 +284,7 @@ function getItemTotal(item: InvoiceItemModel): number {
                                                     Release date
                                                 </div>
                                                 <div class="fw-semibold">
-                                                    {{ formatDate(item.set.tcg_date) }}
+                                                    {{ formatDate(item.set.tcgDate) }}
                                                 </div>
                                             </div>
 
@@ -293,7 +293,7 @@ function getItemTotal(item: InvoiceItemModel): number {
                                                     Set code
                                                 </div>
                                                 <div class="fw-semibold">
-                                                    {{ item.set.set_code }}
+                                                    {{ item.set.setCode }}
                                                 </div>
                                             </div>
                                         </div>
@@ -399,11 +399,11 @@ function getItemTotal(item: InvoiceItemModel): number {
                                 class="receipt-item"
                             >
                                 <div class="receipt-item-title">
-                                    {{ item.set.set_name }}
+                                    {{ item.set.setName }}
                                 </div>
 
                                 <div class="receipt-small mb-1">
-                                    {{ item.set.set_code }}
+                                    {{ item.set.setCode }}
                                 </div>
 
                                 <div class="receipt-row">

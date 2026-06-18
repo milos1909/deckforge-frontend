@@ -11,6 +11,7 @@ export interface CardModel {
     race: string 
     attribute?: string
     archetype?: string
+    scale?: number
     linkval?: number
     card_sets: SetModel[]
 }

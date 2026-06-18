@@ -15,7 +15,7 @@ import { computed, ref } from 'vue';
         if (cartItems.value == undefined) return 0
         let current = 0
         for (let item of cartItems.value) {
-            current += item.count * item.set.set_price
+            current += item.count * item.set.price
         }
         return current.toFixed(2)
     })
@@ -51,7 +51,7 @@ import { computed, ref } from 'vue';
     }
 
     function removeItemFromCart(item: any) {
-        if (!confirm(`Are you sure you want to remove the item ${item.set.set_name}?`))
+        if (!confirm(`Are you sure you want to remove the item ${item.set.setName}?`))
             return
         DataService.useAxios(`/invoice/cart/${item.id}`, 'delete')
             .then(() => {
@@ -84,10 +84,10 @@ import { computed, ref } from 'vue';
                     <tbody>
                         <tr v-for="item in cartItems">
                             <th scope="row">{{ item.id }}</th>
-                            <td>{{ item.set.set_name }}</td>
-                            <td>{{ item.set.set_code }}</td>
-                            <td>{{ item.set.num_of_cards }}</td>
-                            <td>{{ item.set.set_price }} </td>
+                            <td>{{ item.set.setName }}</td>
+                            <td>{{ item.set.setCode }}</td>
+                            <td>{{ item.set.numOfCards }}</td>
+                            <td>{{ item.set.price }} </td>
                             <td>
                                 <ul class="pagination">
                                     <li class="page-item">
@@ -107,7 +107,7 @@ import { computed, ref } from 'vue';
                                     </li>
                                 </ul>
                             </td>
-                            <td>{{ (item.count * item.set.set_price).toFixed(2) }} €</td>
+                            <td>{{ (item.count * item.set.price).toFixed(2) }} €</td>
                             <td>
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-sm btn-danger" @click="removeItemFromCart(item)">

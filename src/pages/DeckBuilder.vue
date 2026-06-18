@@ -3,20 +3,14 @@ import Loading from '@/components/Loading.vue'
 import CardTooltip from '@/components/CardTooltip.vue'
 import { getCardImage, setFallbackImage } from '@/helpers/image'
 import type { CardModel } from '@/models/card.model'
-import { DataService } from '@/services/data.service'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { DeckService } from '@/services/deck.service'
 import { useAuth }  from '@/hooks/auth.hook'
+import { useCardSearch } from '@/hooks/cardSearch.hook'
 
 type DeckZone = 'main' | 'extra' | 'side'
 
 const { auth } = useAuth()
-
-const cards = ref<CardModel[]>([])
-const loading = ref(false)
-const totalResults = ref(0)
-const search = ref('')
-const currentPage = ref(1)
 
 const deckId = ref<number | null>(null)
 const deckName = ref('New Deck')
@@ -32,33 +26,45 @@ const EXTRA_LIMIT = 15
 const SIDE_LIMIT = 15
 const COPY_LIMIT = 3
 
-const totalPages = computed(() => Math.max(1, Math.ceil(totalResults.value / PAGE_SIZE)))
-
-async function loadCards() {
-  loading.value = true
-
-  try {
-    const offset = (currentPage.value - 1) * PAGE_SIZE
-    const rsp = await DataService.getCards(search.value, PAGE_SIZE, offset)
-
-    cards.value = rsp.data.cards
-    totalResults.value = rsp.data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
-}
-
-function previousPage() {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
-}
+const {
+  cards,
+  loading,
+  currentPage,
+  totalResults,
+  totalPages,
+  search,
+  selectedType,
+  selectedArchetype,
+  selectedRace,
+  selectedAttribute,
+  selectedLevel,
+  selectedLinkval,
+  selectedScale,
+  selectedSortBy,
+  selectedSortDirection,
+  showAdvancedFilters,
+  cardTypes,
+  archetypes,
+  races,
+  attributes,
+  levels,
+  linkValues,
+  scales,
+  hasSelectedType,
+  isMonster,
+  isLink,
+  isPendulum,
+  sortOptions,
+  sortOptionLabel,
+  loadCards,
+  loadFilterOptions,
+  loadRaces,
+  applyFilters,
+  resetFilters,
+  resetTypeSpecificFilters,
+  nextPage,
+  previousPage
+} = useCardSearch(PAGE_SIZE)
 
 function isExtraDeckCard(card: CardModel) {
   return ['Fusion', 'Synchro', 'Xyz', 'Link'].some((type) => card.type.includes(type))
@@ -136,13 +142,18 @@ async function saveDeck() {
   }
 }
 
-watch(search, () => {
-  currentPage.value = 1
+watch(selectedType, async () => {
+  resetTypeSpecificFilters()
+  await loadRaces()
+  await applyFilters()
 })
 
 watch(currentPage, loadCards)
 
-onMounted(loadCards)
+onMounted(async () => {
+  await loadFilterOptions()
+  await loadCards()
+})
 </script>
 
 <template>
@@ -232,24 +243,98 @@ onMounted(loadCards)
           <div class="builder-panel search-panel">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
               <h2 class="h5 fw-bold mb-1">Card Search</h2>
-            </div>
-
-            <div class="search-wrapper mb-3">
-              <i class="fa-solid fa-magnifying-glass search-icon"></i>
-              <input v-model="search" @keyup.enter="loadCards" type="text" class="form-control search-input" placeholder="Search cards..." />
-              <button class="btn btn-primary" @click="loadCards">
-                <i class="fa-solid fa-arrow-right"></i>
+              <button class="btn btn-outline-secondary btn-sm text-nowrap" @click="resetFilters">
+                <i class="fa-solid fa-filter-circle-xmark"></i>
+                Reset
               </button>
             </div>
 
-            <div class="d-flex justify-content-center align-items-center mb-3 gap-1">
-              <button class="btn btn-outline-primary btn-sm" @click="previousPage" :disabled="currentPage === 1">
-                <i class="fa-solid fa-arrow-left"></i>
+            <div class="search-toolbar mb-3">
+              <div class="input-group deck-search">
+                <span class="input-group-text">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input v-model="search" @keyup.enter="applyFilters" type="text" class="form-control" placeholder="Search cards..." />
+                <button class="btn btn-primary" @click="applyFilters">
+                  <i class="fa-solid fa-arrow-right"></i>
+                </button>
+              </div>
+
+              <label class="search-sort-field">
+                <span>Sort by</span>
+                <select v-model="selectedSortBy" class="form-select form-select-sm search-sort" @change="applyFilters">
+                  <option value="">Default</option>
+                  <option v-for="sortOption in sortOptions" :key="sortOption" :value="sortOption">{{ sortOptionLabel(sortOption) }}</option>
+                </select>
+              </label>
+
+              <select v-model="selectedSortDirection" class="form-select form-select-sm search-direction" :disabled="!selectedSortBy" @change="applyFilters">
+                <option value="DESC">DESC</option>
+                <option value="ASC">ASC</option>
+              </select>
+
+              <button class="btn btn-outline-primary btn-sm text-nowrap" @click="showAdvancedFilters = !showAdvancedFilters">
+                <i class="fa-solid fa-sliders"></i>
+                More filters
               </button>
-              <span class="small text-secondary">Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} cards</span>
-              <button class="btn btn-outline-primary btn-sm" @click="nextPage" :disabled="currentPage >= totalPages">
-                <i class="fa-solid fa-arrow-right"></i>
-              </button>
+            </div>
+
+            <div v-if="showAdvancedFilters" class="deck-advanced-filters mb-3">
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Type</label>
+                <select v-model="selectedType" class="form-select form-select-sm">
+                  <option value="">All types</option>
+                  <option v-for="type in cardTypes" :key="type" :value="type">{{ type }}</option>
+                </select>
+              </div>
+
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Archetype</label>
+                <select v-model="selectedArchetype" class="form-select form-select-sm" @change="applyFilters">
+                  <option value="">All archetypes</option>
+                  <option v-for="archetype in archetypes" :key="archetype" :value="archetype">{{ archetype }}</option>
+                </select>
+              </div>
+
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Race</label>
+                <select v-model="selectedRace" class="form-select form-select-sm" :disabled="!hasSelectedType" @change="applyFilters">
+                  <option value="">Any race</option>
+                  <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
+                </select>
+              </div>
+
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Attribute</label>
+                <select v-model="selectedAttribute" class="form-select form-select-sm" :disabled="!isMonster" @change="applyFilters">
+                  <option value="">Any attribute</option>
+                  <option v-for="attribute in attributes" :key="attribute" :value="attribute">{{ attribute }}</option>
+                </select>
+              </div>
+
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Level</label>
+                <select v-model="selectedLevel" class="form-select form-select-sm" :disabled="!isMonster || isLink" @change="applyFilters">
+                  <option value="">Any level</option>
+                  <option v-for="level in levels" :key="level" :value="level">{{ level }}</option>
+                </select>
+              </div>
+
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Link rating</label>
+                <select v-model="selectedLinkval" class="form-select form-select-sm" :disabled="!isLink" @change="applyFilters">
+                  <option value="">Any link rating</option>
+                  <option v-for="linkval in linkValues" :key="linkval" :value="linkval">{{ linkval }}</option>
+                </select>
+              </div>
+
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Scale</label>
+                <select v-model="selectedScale" class="form-select form-select-sm" :disabled="!isPendulum" @change="applyFilters">
+                  <option value="">Any scale</option>
+                  <option v-for="scale in scales" :key="scale" :value="scale">{{ scale }}</option>
+                </select>
+              </div>
             </div>
 
             <div v-if="loading" class="loading-state">
@@ -267,6 +352,16 @@ onMounted(loadCards)
               </CardTooltip>
             </div>
             <div v-else class="empty-search">No matching cards found.</div>
+
+            <div class="search-pagination mt-3" v-if="cards.length > 0">
+              <button class="btn btn-outline-primary btn-sm" @click="previousPage" :disabled="currentPage === 1">
+                <i class="fa-solid fa-arrow-left"></i>
+              </button>
+              <span class="small text-secondary">Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} cards</span>
+              <button class="btn btn-outline-primary btn-sm" @click="nextPage" :disabled="currentPage >= totalPages">
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
           </div>
         </aside>
       </div>
@@ -393,24 +488,55 @@ onMounted(loadCards)
   top: 1rem;
 }
 
-.search-wrapper {
-  position: relative;
+.search-toolbar {
+  align-items: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
   gap: 0.5rem;
+  grid-template-columns: minmax(150px, 1fr) 150px 78px auto;
 }
 
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
+.deck-search .input-group-text {
+  background: #ffffff;
+}
+
+.search-sort-field {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.search-sort-field span {
   color: #64748b;
-  transform: translateY(-50%);
-  z-index: 1;
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
-.search-input {
-  padding-left: 2.35rem;
+.search-sort,
+.search-direction {
+  min-height: 38px;
+}
+
+.deck-advanced-filters {
+  background: #ffffff;
+  border: 1px solid #dfe4ec;
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.85rem;
+}
+
+.deck-filter-field .form-label {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.deck-filter-field .form-select:disabled,
+.search-direction:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .card-search-grid {
@@ -420,6 +546,13 @@ onMounted(loadCards)
   max-height: 680px;
   overflow: auto;
   padding-right: 0.15rem;
+}
+
+.search-pagination {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
 }
 
 .search-card,
@@ -460,6 +593,16 @@ onMounted(loadCards)
 
   .card-search-grid {
     grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  }
+
+  .search-toolbar,
+  .deck-advanced-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .search-sort-field {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .deck-zone {
