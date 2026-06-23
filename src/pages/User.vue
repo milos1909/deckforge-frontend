@@ -1,10 +1,10 @@
 <script lang="ts" setup>
+import DeckPreviewCard from '@/components/DeckPreviewCard.vue'
 import Loading from '@/components/Loading.vue'
-import { getCroppedCardImage } from '@/helpers/image'
 import { useAuth } from '@/hooks/auth.hook'
 import type { InvoiceModel } from '@/models/invoice.model'
 import type { UserModel } from '@/models/user.model'
-import { DataService } from '@/services/data.service'
+import { UserService } from '@/services/user.service'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -46,11 +46,6 @@ function formatDate(value: string) {
     }).format(new Date(value))
 }
 
-function hideBrokenCover(event: Event) {
-    const image = event.target as HTMLImageElement
-    image.style.display = 'none'
-}
-
 onMounted(async () => {
     if (!auth.value) {
         await router.replace('/login')
@@ -58,7 +53,7 @@ onMounted(async () => {
     }
 
     try {
-        const rsp = await DataService.useAxios<UserModel>('/user/profile')
+        const rsp = await UserService.getProfile()
         user.value = rsp.data
     } catch {
         loadError.value = true
@@ -127,28 +122,14 @@ onMounted(async () => {
                     </div>
 
                     <div v-if="decks.length" class="deck-list">
-                        <article v-for="deck in decks" :key="deck.id" class="profile-deck-card">
-                            <img
-                                v-if="deck.coverCardId"
-                                :src="getCroppedCardImage(deck.coverCardId)"
-                                :alt="`${deck.name} cover`"
-                                class="deck-cover"
-                                @error="hideBrokenCover"
-                            >
-                            <div class="deck-cover-shade"></div>
-                            <div class="deck-card-topline">
-                                <span class="visibility-badge">
-                                    <i :class="deck.isPublic ? 'fa-solid fa-earth-americas' : 'fa-solid fa-lock'"></i>
-                                    {{ deck.isPublic ? 'Public' : 'Private' }}
-                                </span>
-                            </div>
-                            <div class="deck-card-content">
-                                <h3>{{ deck.name }}</h3>
-                                <p v-if="deck.description">{{ deck.description }}</p>
-                                <p v-else class="deck-description-empty">No description</p>
-                                <span>Updated {{ formatDate(deck.updatedAt || deck.createdAt) }}</span>
-                            </div>
-                        </article>
+                        <DeckPreviewCard
+                            v-for="deck in decks"
+                            :key="deck.id"
+                            :deck="deck"
+                            date-label="Updated"
+                            :date-value="deck.updatedAt || deck.createdAt"
+                            show-visibility
+                        />
                     </div>
 
                     <div v-else class="empty-section">
@@ -324,81 +305,12 @@ onMounted(async () => {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.profile-deck-card {
-    aspect-ratio: 1.8;
-    background: #212529;
-    border: 1px solid #cfd6e0;
-    border-radius: 6px;
-    color: #ffffff;
-    min-height: 190px;
-    overflow: hidden;
-    position: relative;
-}
-
-.deck-cover {
-    height: 100%;
-    inset: 0;
-    object-fit: cover;
-    position: absolute;
-    width: 100%;
-}
-
-.deck-cover-shade {
-    background: linear-gradient(to bottom, rgba(9, 14, 23, 0.08) 20%, rgba(9, 14, 23, 0.92) 100%);
-    inset: 0;
-    position: absolute;
-}
-
-.deck-card-topline {
-    left: 0.75rem;
-    position: absolute;
-    top: 0.75rem;
-}
-
-.visibility-badge,
 .paid-badge {
     align-items: center;
     display: inline-flex;
     font-size: 0.75rem;
     font-weight: 700;
     gap: 0.35rem;
-}
-
-.visibility-badge {
-    background: rgba(15, 23, 42, 0.82);
-    border-radius: 4px;
-    color: #ffffff;
-    padding: 0.3rem 0.5rem;
-}
-
-.deck-card-content {
-    bottom: 0;
-    left: 0;
-    padding: 1rem;
-    position: absolute;
-    right: 0;
-}
-
-.deck-card-content h3 {
-    font-size: 1.05rem;
-    font-weight: 800;
-    margin-bottom: 0.25rem;
-    overflow-wrap: anywhere;
-}
-
-.deck-card-content p {
-    display: -webkit-box;
-    font-size: 0.82rem;
-    margin-bottom: 0.45rem;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-}
-
-.deck-card-content span,
-.deck-description-empty {
-    color: #d8dee8;
-    font-size: 0.75rem;
 }
 
 .empty-section {
@@ -501,8 +413,5 @@ onMounted(async () => {
         grid-template-columns: 1fr;
     }
 
-    .profile-deck-card {
-        min-height: 180px;
-    }
 }
 </style>

@@ -1,59 +1,60 @@
 <script setup lang="ts">
-    import CardTooltip from '@/components/CardTooltip.vue'
-    import Loading from '@/components/Loading.vue'
-    import { getCardImage, getSetImage, setFallbackImage } from '@/helpers/image'
-    import { useAuth } from '@/hooks/auth.hook'
-    import type { CardModel } from '@/models/card.model'
-    import type { SetModel } from '@/models/set.model'
-    import { DataService } from '@/services/data.service'
-    import { InvoiceService } from '@/services/invoice.service'
-    import { onMounted, ref } from 'vue'
-    import { useRoute, useRouter } from 'vue-router'
+import CardTooltip from '@/components/CardTooltip.vue'
+import Loading from '@/components/Loading.vue'
+import { getCardImage, getSetImage, setFallbackImage } from '@/helpers/image'
+import { useAuth } from '@/hooks/auth.hook'
+import type { CardModel } from '@/models/card.model'
+import type { SetModel } from '@/models/set.model'
 
-    type RarityGroup = {
-        rarity: string
-        rarityCode: string | null
-        cards: CardModel[]
+import { InvoiceService } from '@/services/invoice.service'
+import { SetService } from '@/services/set.service'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+type RarityGroup = {
+    rarity: string
+    rarityCode: string | null
+    cards: CardModel[]
+}
+
+const route = useRoute()
+const router = useRouter()
+
+const { auth, logout } = useAuth()
+
+const setName = route.params.setName
+
+const set = ref<SetModel>()
+const rarityGroups = ref<RarityGroup[]>([])
+const loading = ref(false)
+
+async function loadSet() {
+    loading.value = true
+
+    try {
+        const rsp = await SetService.getSetByName(String(setName))
+
+        set.value = rsp.data.set_details
+        rarityGroups.value = rsp.data.rarity_groups ?? []
+    } finally {
+        loading.value = false
+    }
+}
+
+function addToCart(setName: string) {
+    if (!auth.value) {
+        alert('You must be logged in in order to buy items')
+        return
     }
 
-    const route = useRoute()
-    const router = useRouter()
+    if (!confirm(`Add ${setName} to cart`)) return
 
-    const { auth, logout } = useAuth()
+    InvoiceService.addSetToCart(setName)
+        .then(() => router.push('/cart'))
+        .catch(e => logout(e))
+}
 
-    const setName = route.params.setName
-
-    const set = ref<SetModel>()
-    const rarityGroups = ref<RarityGroup[]>([])
-    const loading = ref(false)
-
-    async function loadSet() {
-        loading.value = true
-
-        try {
-            const rsp = await DataService.getSetByName(String(setName))
-
-            set.value = rsp.data.set_details
-            rarityGroups.value = rsp.data.rarity_groups ?? []
-        } finally {
-            loading.value = false
-        }
-    }
-
-    function addToCart(setName: string) {
-        if (!auth.value) {
-            alert('You must be logged in in order to buy items')
-            return
-        }
-
-        if (!confirm(`Add ${setName} to cart`)) return
-
-        InvoiceService.addSetToCart(setName)
-            .then(() => router.push('/cart'))
-            .catch(e => logout(e))
-    }
-
-    onMounted(loadSet)
+onMounted(loadSet)
 </script>
 
 <template>

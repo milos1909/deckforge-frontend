@@ -2,38 +2,39 @@
     import Loading from '@/components/Loading.vue'
     import type { CardModel } from '@/models/card.model'
     import type { SetModel } from '@/models/set.model'
-    import { DataService } from '@/services/data.service'
+    import { CardService } from '@/services/card.service'
+    import { SetService } from '@/services/set.service'
     import { onMounted, ref } from 'vue'
     import { useRoute } from 'vue-router'
 
-    const route = useRoute()
-    const id = route.params.id
+const route = useRoute()
+const id = route.params.id
 
-    const card = ref<CardModel>()
-    const sets = ref<SetModel[]>([]) 
+const card = ref<CardModel>()
+const sets = ref<SetModel[]>([]) 
 
-    const loading = ref(false)
+const loading = ref(false)
 
-    async function loadCard() {
-        loading.value = true
+async function loadCard() {
+    loading.value = true
 
-        try {
-            const rsp = await DataService.getCardById(Number(id))
-            card.value = rsp.data
+    try {
+        const rsp = await CardService.getCardById(Number(id))
+        card.value = rsp.data
 
-            for(const set of card.value?.card_sets ?? []) {
-                const rsp = await DataService.getSetByName(set.setName)
-                sets.value.push(rsp.data.set_details)
-                sets.value = sets.value.filter(
-                    (set, index, self) => index === self.findIndex(s => s.setName === set.setName)
-                )
-            }
-        } finally {
-            loading.value = false
+        for(const set of card.value?.card_sets ?? []) {
+            const rsp = await SetService.getSetByName(set.setName)
+            sets.value.push(rsp.data.set_details)
+            sets.value = sets.value.filter(
+                (set, index, self) => index === self.findIndex(s => s.setName === set.setName)
+            )
         }
+    } finally {
+        loading.value = false
     }
+}
 
-    onMounted(loadCard)
+onMounted(loadCard)
 </script>
 
 <template>

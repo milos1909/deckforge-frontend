@@ -23,6 +23,12 @@
             </RouterLink>
           </li>
           <li class="nav-item">
+            <RouterLink class="nav-link active" to="/decks">
+              <i class="fa-solid fa-compass"></i>
+              Browse Decks
+            </RouterLink>
+          </li>
+          <li class="nav-item">
             <RouterLink class="nav-link active" to="/card-catalogue">
               <i class="fa-solid fa-layer-group"></i>
               Card Catalogue

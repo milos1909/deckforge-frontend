@@ -11,6 +11,8 @@ import SetDetails from '@/pages/SetDetails.vue'
 import SetShop from '@/pages/SetShop.vue'
 import CardCatalogue from '@/pages/CardCatalogue.vue'
 import DeckBuilder from '@/pages/DeckBuilder.vue'
+import DeckDetails from '@/pages/DeckDetails.vue'
+import DeckBrowser from '@/pages/DeckBrowser.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,6 +29,20 @@ const router = createRouter({
       component: DeckBuilder,
       meta: {
         title: 'Deck Builder'
+      }
+    },
+    {
+      path: '/decks',
+      component: DeckBrowser,
+      meta: {
+        title: 'Browse Decks'
+      }
+    },
+    {
+      path: '/deck/:id',
+      component: DeckDetails,
+      meta: {
+        title: 'Deck Details'
       }
     },
     {

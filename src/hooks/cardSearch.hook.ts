@@ -1,17 +1,12 @@
 import type { CardModel } from "@/models/card.model"
-import  { DataService } from "@/services/data.service"
+import { CardService } from "@/services/card.service"
 import { ref, computed } from "vue"
+import { usePagination } from "./pagination.hook"
 
-export function useCardSearch(pageSize: number) {
+export function useCardSearch(pagination: ReturnType<typeof usePagination>) {
     const cards = ref<CardModel[]>([])
     const loading = ref(false)
-    const currentPage = ref(1)
-    const totalResults = ref(0)
 
-    const totalPages = computed(() =>
-        Math.max(1, Math.ceil(totalResults.value / pageSize))
-    )
-   
     const search = ref('')
     const selectedType = ref('')
     const selectedArchetype = ref('')
@@ -43,11 +38,11 @@ export function useCardSearch(pageSize: number) {
         selectedType.value.includes('Skill')
     )
 
-    const sortOptions = computed(() => ['name', 'tcgDate', 'atk', 'def'])
+    const sortOptions = computed(() => ['name', 'releaseDate', 'atk', 'def'])
 
     function sortOptionLabel(sortOption: string) {
         if (sortOption === 'name') return 'Name'
-        if (sortOption === 'tcgDate') return 'Release date'
+        if (sortOption === 'releaseDate') return 'Release date'
         
         return sortOption.toUpperCase()
     }
@@ -57,12 +52,10 @@ export function useCardSearch(pageSize: number) {
         loading.value = true
 
         try {
-            const offset = ((currentPage.value - 1) * pageSize)
-            
-            const rsp = await DataService.getCards(search.value, pageSize, offset, activeFilters())
+            const rsp = await CardService.getCards(search.value, pagination.pageSize, pagination.offset.value, activeFilters())
 
             cards.value = rsp.data.cards
-            totalResults.value = rsp.data.total  
+            pagination.totalResults.value = rsp.data.total  
         } finally {
             loading.value = false
         }
@@ -84,9 +77,9 @@ export function useCardSearch(pageSize: number) {
 
     async function loadFilterOptions() {
         const [typesRsp, archetypesRsp, attributesRsp] = await Promise.allSettled([
-            DataService.getCardTypes(),
-            DataService.getCardArchetypes(),
-            DataService.getCardAttributes()
+            CardService.getCardTypes(),
+            CardService.getCardArchetypes(),
+            CardService.getCardAttributes()
         ])
 
         if (typesRsp.status === 'fulfilled') {
@@ -108,7 +101,7 @@ export function useCardSearch(pageSize: number) {
         if (!selectedType.value) return
 
         try {
-            const rsp = await DataService.getCardRaces(selectedType.value)
+            const rsp = await CardService.getCardRaces(selectedType.value)
             races.value = rsp.data
         } catch (e) {
             races.value = []
@@ -116,8 +109,8 @@ export function useCardSearch(pageSize: number) {
     }
 
     async function applyFilters() {
-        if (currentPage.value !== 1) {
-            currentPage.value = 1
+        if (pagination.currentPage.value !== 1) {
+            pagination.currentPage.value = 1
             return
         }
 
@@ -138,8 +131,8 @@ export function useCardSearch(pageSize: number) {
         showAdvancedFilters.value = false
         races.value = []
         
-        if (currentPage.value !== 1) {
-            currentPage.value = 1
+        if (pagination.currentPage.value !== 1) {
+            pagination.currentPage.value = 1
             return
         }
 
@@ -154,25 +147,9 @@ export function useCardSearch(pageSize: number) {
         selectedScale.value = ''
     }
 
-    function nextPage() {
-        if (currentPage.value < totalPages.value) {
-            currentPage.value++
-        }
-    }
-
-    function previousPage() {
-        if (currentPage.value > 1) {
-            currentPage.value--
-        }
-    }
-
     return {
         cards,
         loading,
-        currentPage,
-        totalResults,
-        totalPages,
-
         search,
         selectedType,
         selectedArchetype,
@@ -184,7 +161,6 @@ export function useCardSearch(pageSize: number) {
         selectedSortBy,
         selectedSortDirection,
         showAdvancedFilters,
-
         cardTypes,
         archetypes,
         races,
@@ -192,7 +168,6 @@ export function useCardSearch(pageSize: number) {
         levels,
         linkValues,
         scales,
-
         hasSelectedType,
         isMonster,
         isLink,
@@ -200,14 +175,11 @@ export function useCardSearch(pageSize: number) {
         isSimpleType,
         sortOptions,
         sortOptionLabel,
-
         loadCards,
         loadFilterOptions,
         loadRaces,
         applyFilters,
         resetFilters,
         resetTypeSpecificFilters,
-        nextPage,
-        previousPage
     }
 }

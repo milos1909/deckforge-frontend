@@ -1,62 +1,70 @@
 <script setup lang="ts">
-    import Loading from '@/components/Loading.vue';
-    import { getSetImage, setFallbackImage } from '@/helpers/image';
-    import type { SetModel } from '@/models/set.model';
-    import { DataService } from '@/services/data.service';
-    import { computed, onMounted, ref, watch } from 'vue';
+import Loading from '@/components/Loading.vue';
+import PaginationControls from '@/components/PaginationControls.vue';
+import { getSetImage, setFallbackImage } from '@/helpers/image';
+import { usePagination } from '@/hooks/pagination.hook';
+import type { SetModel } from '@/models/set.model';
+import { SetService } from '@/services/set.service';
+import { onMounted, ref, watch } from 'vue';
 
-    const sets = ref<SetModel[]>([])
-    const loading = ref(false)
-    const totalResults = ref(0)
-    const search = ref('')
-    const currentPage = ref(1)
-    const sortDirection = ref<'ASC' | 'DESC'>('DESC')
-    const maxPrice = ref(300)
-    const PAGE_SIZE = 16
-    const totalPages = computed(() =>
-        Math.max(1, Math.ceil(totalResults.value / PAGE_SIZE))
-    )
-    
-    async function loadSets() {
-        loading.value = true
+const sets = ref<SetModel[]>([])
+const loading = ref(false)
 
-        try {
-            const offset = ((currentPage.value - 1) * PAGE_SIZE)
+const search = ref('')
+const sortDirection = ref<'ASC' | 'DESC'>('DESC')
+const maxPrice = ref(300)
 
-            const rsp = await DataService.getSets(search.value, sortDirection.value, maxPrice.value, PAGE_SIZE, offset)
-            
-            sets.value = rsp.data.sets
-            totalResults.value = rsp.data.total
-        } finally {
-            loading.value = false
-        }
+const PAGE_SIZE = 16
+
+const {
+    offset,
+    currentPage,
+    totalResults,
+    totalPages,
+    nextPage,
+    previousPage
+} = usePagination(PAGE_SIZE)
+
+async function loadSets() {
+    loading.value = true
+
+    try {
+        const rsp = await SetService.getSets(search.value, sortDirection.value, maxPrice.value, PAGE_SIZE, offset.value)
+        
+        sets.value = rsp.data.sets
+        totalResults.value = rsp.data.total
+    } finally {
+        loading.value = false
     }
+}
 
-    function nextPage() {
-        currentPage.value++
-    }
-
-    function previousPage() {
-        if (currentPage.value > 1) {
-            currentPage.value--
-        }
-    }
-
-    async function resetFilters() {
-        search.value = ''
-        sortDirection.value = 'DESC'
-        maxPrice.value = 300
+async function applyFilters() {
+    if (currentPage.value !== 1) {
         currentPage.value = 1
-        await loadSets()
+        return
     }
 
-    watch(search, () => {
+    await loadSets()
+}
+
+async function resetFilters() {
+    search.value = ''
+    sortDirection.value = 'DESC'
+    maxPrice.value = 300
+
+    if (currentPage.value !== 1) {
         currentPage.value = 1
-    })
+        return
+    }
 
-    watch(currentPage, loadSets)
+    await loadSets()
+}
 
-    onMounted(loadSets)
+watch(currentPage, loadSets)
+
+onMounted(async () => {
+    await loadSets()
+})
 </script>
 
 <template>
@@ -74,15 +82,15 @@
                     <span class="input-group-text">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
-                    <input v-model="search" @keyup.enter="loadSets" type="text" class="form-control" placeholder="Search sets...">
-                    <button class="btn btn-primary" @click="loadSets">
+                    <input v-model="search" @keyup.enter="applyFilters" type="text" class="form-control" placeholder="Search sets...">
+                    <button class="btn btn-primary" @click="applyFilters">
                         <i class="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
 
                 <div class="filter-controls">
                     <div class="shop-filter">
-                        <select v-model="sortDirection" class="form-select form-select-sm" @change="loadSets">
+                        <select v-model="sortDirection" class="form-select form-select-sm" @change="applyFilters">
                             <option value="DESC">Newest first</option>
                             <option value="ASC">Oldest first</option>
                         </select>
@@ -90,7 +98,7 @@
 
                     <div class="price-filter">
                         <label class="form-label small text-secondary mb-1">Max price: {{ maxPrice }} EUR</label>
-                        <input v-model.number="maxPrice" type="range" class="form-range" min="0" max="300" step="1" @change="loadSets">
+                        <input v-model.number="maxPrice" type="range" class="form-range" min="0" max="300" step="1" @change="applyFilters">
                     </div>
 
                     <button class="btn btn-outline-secondary btn-sm reset-button" @click="resetFilters">
@@ -143,27 +151,15 @@
                 </div>
             </div>
 
-            <div class="pagination-controls mt-4" v-if="sets.length > 0">
-                <button
-                    class="btn btn-outline-primary btn-sm"
-                    @click="previousPage"
-                    :disabled="currentPage === 1"
-                >
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-
-                <span class="small text-secondary">
-                    Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} sets
-                </span>
-
-                <button
-                    class="btn btn-outline-primary btn-sm"
-                    @click="nextPage"
-                    :disabled="currentPage === totalPages"
-                >
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
+            <PaginationControls
+                v-if="sets.length > 0"
+                class="mt-4"
+                :current-page="currentPage"
+                :total-pages="totalPages"
+                :total-results="totalResults"
+                @previous="previousPage"
+                @next="nextPage"
+            />
         </div>
     </div>
 </template>
@@ -216,13 +212,6 @@
 
     .reset-button {
         white-space: nowrap;
-    }
-
-    .pagination-controls {
-        align-items: center;
-        display: flex;
-        gap: 0.5rem;
-        justify-content: center;
     }
 
     .set-card {
@@ -307,10 +296,6 @@
     @media (max-width: 575.98px) {
         .page-content {
             padding-top: 1.25rem;
-        }
-
-        .pagination-controls {
-            width: 100%;
         }
 
         .shop-search,

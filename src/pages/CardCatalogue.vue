@@ -1,66 +1,73 @@
 <script setup lang="ts">
-    import CardTooltip from '@/components/CardTooltip.vue';
-    import Loading from '@/components/Loading.vue';
-    import { getCardImage, setFallbackImage } from '@/helpers/image';
-    import { useCardSearch } from '@/hooks/cardSearch.hook';
-    import { onMounted, watch } from 'vue';
+import CardTooltip from '@/components/CardTooltip.vue';
+import Loading from '@/components/Loading.vue';
+import PaginationControls from '@/components/PaginationControls.vue';
+import { getCardImage, setFallbackImage } from '@/helpers/image';
+import { useCardSearch } from '@/hooks/cardSearch.hook';
+import { usePagination } from '@/hooks/pagination.hook';
+import { onMounted, watch } from 'vue';
 
-    const PAGE_SIZE = 30
-    
-    const {
-        cards,
-        loading,
-        currentPage,
-        totalResults,
-        totalPages,
-        search,
-        selectedType,
-        selectedArchetype,
-        selectedRace,
-        selectedAttribute,
-        selectedLevel,
-        selectedLinkval,
-        selectedScale,
-        selectedSortBy,
-        selectedSortDirection,
-        showAdvancedFilters,
-        cardTypes,
-        archetypes,
-        races,
-        attributes,
-        levels,
-        linkValues,
-        scales,
-        hasSelectedType,
-        isMonster,
-        isLink,
-        isPendulum,
-        isSimpleType,
-        sortOptions,
-        sortOptionLabel,
-        loadCards,
-        loadFilterOptions,
-        loadRaces,
-        applyFilters,
-        resetFilters,
-        resetTypeSpecificFilters,
-        nextPage,
-        previousPage
-    } = useCardSearch(PAGE_SIZE)
+const PAGE_SIZE = 30
 
-    watch(selectedType, async () => {
-        resetTypeSpecificFilters()
-        showAdvancedFilters.value = false
-        await loadRaces()
-        await applyFilters()
-    })
+const pagination = usePagination(PAGE_SIZE)
 
-    watch(currentPage, loadCards)
+const {
+    currentPage,
+    totalResults,
+    totalPages,
+    nextPage,
+    previousPage
+} = pagination
 
-    onMounted(async () => {
-        await loadFilterOptions()
-        await loadCards()
-    })
+const {
+    cards,
+    loading,
+    search,
+    selectedType,
+    selectedArchetype,
+    selectedRace,
+    selectedAttribute,
+    selectedLevel,
+    selectedLinkval,
+    selectedScale,
+    selectedSortBy,
+    selectedSortDirection,
+    showAdvancedFilters,
+    cardTypes,
+    archetypes,
+    races,
+    attributes,
+    levels,
+    linkValues,
+    scales,
+    hasSelectedType,
+    isMonster,
+    isLink,
+    isPendulum,
+    isSimpleType,
+    sortOptions,
+    sortOptionLabel,
+    loadCards,
+    loadFilterOptions,
+    loadRaces,
+    applyFilters,
+    resetFilters,
+    resetTypeSpecificFilters
+} = useCardSearch(pagination)
+
+watch(selectedType, async () => {
+    resetTypeSpecificFilters()
+    showAdvancedFilters.value = false
+    await loadRaces()
+    await applyFilters()
+})
+
+watch(currentPage, loadCards)
+
+onMounted(async () => {
+    await loadFilterOptions()
+    await loadCards()
+})
 </script>
 
 <template>
@@ -203,17 +210,15 @@
                 </div>
             </div>
 
-            <div class="pagination-controls mt-4" v-if="cards.length > 0">
-                <button class="btn btn-outline-primary btn-sm" @click="previousPage" :disabled="currentPage === 1">
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-                <span class="small text-secondary">
-                    Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} cards
-                </span>
-                <button class="btn btn-outline-primary btn-sm" @click="nextPage" :disabled="currentPage === totalPages">
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
+            <PaginationControls
+                v-if="cards.length > 0"
+                class="mt-4"
+                :current-page="currentPage"
+                :total-pages="totalPages"
+                :total-results="totalResults"
+                @previous="previousPage"
+                @next="nextPage"
+            />
         </div>
     </div>
 </template>
@@ -329,13 +334,6 @@
         padding-bottom: 0.35rem;
     }
 
-    .pagination-controls {
-        align-items: center;
-        display: flex;
-        gap: 0.5rem;
-        justify-content: center;
-    }
-
     .catalogue-results {
         min-height: 545px;
     }
@@ -381,10 +379,6 @@
     @media (max-width: 575.98px) {
         .page-content {
             padding-top: 1.25rem;
-        }
-
-        .pagination-controls {
-            width: 100%;
         }
 
         .catalogue-search,

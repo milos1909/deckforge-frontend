@@ -1,28 +1,28 @@
 <script lang="ts" setup>
-    import { DataService } from '@/services/data.service';
-    import { ref } from 'vue';
+import { UserService } from '@/services/user.service';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-    const year = new Date().getFullYear()
+const year = new Date().getFullYear()
 
-    const router = useRouter()
-    const payload = ref({
-        username: '',
-        email: '',
-        password: '',
-        repeat: ''
+const router = useRouter()
+const payload = ref({
+    username: '',
+    email: '',
+    password: '',
+    repeat: ''
+})
+
+function signUp(){
+    if(payload.value.username == '' || payload.value.email == '') return
+    if(payload.value.password == '' || payload.value.repeat == '') return
+    if(payload.value.repeat !== payload.value.password) return
+
+    UserService.register(payload.value).then(rsp => {
+        sessionStorage.setItem('verify_email', payload.value.email)
+        router.push('/verify')
     })
-
-    function signUp(){
-        if(payload.value.username == '' || payload.value.email == '') return
-        if(payload.value.password == '' || payload.value.repeat == '') return
-        if(payload.value.repeat !== payload.value.password) return
-
-        DataService.register(payload.value).then(rsp => {
-            sessionStorage.setItem('verify_email', payload.value.email)
-            router.push('/verify')
-        })
-    }
+}
 </script>
 
 <template>

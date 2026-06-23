@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import Loading from '@/components/Loading.vue'
 import CardTooltip from '@/components/CardTooltip.vue'
+import PaginationControls from '@/components/PaginationControls.vue'
 import { getCardImage, setFallbackImage } from '@/helpers/image'
 import type { CardModel } from '@/models/card.model'
 import { onMounted, ref, watch } from 'vue'
 import { DeckService } from '@/services/deck.service'
 import { useAuth }  from '@/hooks/auth.hook'
 import { useCardSearch } from '@/hooks/cardSearch.hook'
+import { usePagination } from '@/hooks/pagination.hook'
 
 type DeckZone = 'main' | 'extra' | 'side'
 
@@ -26,12 +28,19 @@ const EXTRA_LIMIT = 15
 const SIDE_LIMIT = 15
 const COPY_LIMIT = 3
 
+const pagination = usePagination(PAGE_SIZE)
+
 const {
-  cards,
-  loading,
   currentPage,
   totalResults,
   totalPages,
+  nextPage,
+  previousPage
+} = pagination
+
+const {
+  cards,
+  loading,
   search,
   selectedType,
   selectedArchetype,
@@ -62,9 +71,7 @@ const {
   applyFilters,
   resetFilters,
   resetTypeSpecificFilters,
-  nextPage,
-  previousPage
-} = useCardSearch(PAGE_SIZE)
+} = useCardSearch(pagination)
 
 function isExtraDeckCard(card: CardModel) {
   return ['Fusion', 'Synchro', 'Xyz', 'Link'].some((type) => card.type.includes(type))
@@ -353,15 +360,15 @@ onMounted(async () => {
             </div>
             <div v-else class="empty-search">No matching cards found.</div>
 
-            <div class="search-pagination mt-3" v-if="cards.length > 0">
-              <button class="btn btn-outline-primary btn-sm" @click="previousPage" :disabled="currentPage === 1">
-                <i class="fa-solid fa-arrow-left"></i>
-              </button>
-              <span class="small text-secondary">Page {{ currentPage }}/{{ totalPages }} - {{ totalResults }} cards</span>
-              <button class="btn btn-outline-primary btn-sm" @click="nextPage" :disabled="currentPage >= totalPages">
-                <i class="fa-solid fa-arrow-right"></i>
-              </button>
-            </div>
+            <PaginationControls
+              v-if="cards.length > 0"
+              class="mt-3"
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              :total-results="totalResults"
+              @previous="previousPage"
+              @next="nextPage"
+            />
           </div>
         </aside>
       </div>
@@ -546,13 +553,6 @@ onMounted(async () => {
   max-height: 680px;
   overflow: auto;
   padding-right: 0.15rem;
-}
-
-.search-pagination {
-  align-items: center;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
 }
 
 .search-card,

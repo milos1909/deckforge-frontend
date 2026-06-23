@@ -1,6 +1,6 @@
 import type { AuthModel } from "@/models/auth.model";
 import { AuthService } from "@/services/auth.service";
-import { DataService } from "@/services/data.service";
+import { UserService } from "@/services/user.service";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -10,7 +10,7 @@ export function useAuth() {
     const router = useRouter()
     
     function login(payload: any) {
-        DataService.login(payload).then(rsp => {
+        UserService.login(payload).then(rsp => {
             AuthService.saveAuth(rsp.data)
             auth.value = rsp.data
             router.push('/')

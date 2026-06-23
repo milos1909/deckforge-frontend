@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import { useAuth } from '@/hooks/auth.hook';
 import router from '@/router';
-import { DataService } from '@/services/data.service';
+import { InvoiceService } from '@/services/invoice.service';
 import { computed, ref } from 'vue';
 
     const { logout } = useAuth()
     const cartItems = ref<any[]>()
 
-    DataService.useAxios('/invoice/cart')
+    InvoiceService.getCart()
         .then(rsp => cartItems.value = rsp.data)
         .catch(e => logout(e))
 
@@ -29,13 +29,13 @@ import { computed, ref } from 'vue';
         if (!confirm('Are you sure you want to pay?'))
             return
 
-        DataService.useAxios('/invoice/pay', 'put')
+        InvoiceService.pay()
             .then(rsp => router.push('/user'))
             .catch(e => console.log(e))
     }
 
     function updateCount(item: any) {
-        DataService.useAxios(`/invoice/cart/${item.id}/count/${item.count}`, 'put')
+        InvoiceService.updateCartItemCount(item.id, item.count)
             .catch(e => logout(e))
     }
 
@@ -53,7 +53,7 @@ import { computed, ref } from 'vue';
     function removeItemFromCart(item: any) {
         if (!confirm(`Are you sure you want to remove the item ${item.set.setName}?`))
             return
-        DataService.useAxios(`/invoice/cart/${item.id}`, 'delete')
+        InvoiceService.removeCartItem(item.id)
             .then(() => {
                 cartItems.value = cartItems.value!.filter(
                     i => i.id !== item.id

@@ -1,22 +1,22 @@
 <script lang="ts" setup>
-    import { DataService } from '@/services/data.service';
-    import { ref } from 'vue';
-    import { useRouter } from 'vue-router';
+import { UserService } from '@/services/user.service';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-    const year = new Date().getFullYear()
+const year = new Date().getFullYear()
 
-    const code = ref<number>()
-    const router = useRouter()
-    const email = sessionStorage.getItem('verify_email')
+const code = ref<number>()
+const router = useRouter()
+const email = sessionStorage.getItem('verify_email')
 
-    function verify(){
-        if(code.value == null) {
-           alert("Code can't be empty") 
-           return
-        }
-        
-        DataService.verifyEmail(code.value).then(rsp => router.push('/login')).catch(e => alert('Error: ' + e.message))
+function verify(){
+    if(code.value == null) {
+        alert("Code can't be empty") 
+        return
     }
+    
+    UserService.verifyEmail(code.value).then(rsp => router.push('/login')).catch(e => alert('Error: ' + e.message))
+}
 </script>
 
 <template>

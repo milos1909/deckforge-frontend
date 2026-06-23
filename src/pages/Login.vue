@@ -1,18 +1,18 @@
 <script lang="ts" setup>
-    import { useAuth } from '@/hooks/auth.hook';
-    import { ref } from 'vue';
-    import { useRouter } from 'vue-router';
+import { useAuth } from '@/hooks/auth.hook';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-    const year = new Date().getFullYear()
+const year = new Date().getFullYear()
 
-    const router = useRouter()
+const router = useRouter()
 
-    const payload = ref({
-        username: '',
-        password: ''
-    })
+const payload = ref({
+    username: '',
+    password: ''
+})
 
-    const { login } = useAuth()
+const { login } = useAuth()
 </script>
 
 <template>

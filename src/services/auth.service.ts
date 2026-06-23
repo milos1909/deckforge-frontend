@@ -3,8 +3,10 @@ import type { AuthModel } from "@/models/auth.model";
 const AUTH_KEY = 'deckforge_auth'
 
 export class AuthService {
-    static getAuth(): AuthModel {
-        return JSON.parse(localStorage.getItem(AUTH_KEY)!)
+    static getAuth(): AuthModel | null {
+        const auth = localStorage.getItem(AUTH_KEY)
+
+        return auth ? JSON.parse(auth) : null
     }
 
     static saveAuth(auth: AuthModel) {
@@ -16,10 +18,10 @@ export class AuthService {
     }
 
     static getAccessToken() {
-        return this.getAuth().access
+        return this.getAuth()?.access ?? null
     }
 
     static getRefreshToken() {
-        return this.getAuth().refresh
+        return this.getAuth()?.refresh ?? null
     }
 }
