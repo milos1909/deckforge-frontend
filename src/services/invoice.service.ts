@@ -2,7 +2,7 @@ import { ApiService } from "./api.service";
 
 export class InvoiceService {
     static async addSetToCart(setName: string) {
-        return await ApiService.useAxios( `/invoice/cart/add/${setName}`, 'put')
+        return await ApiService.useAxios( `/invoice/cart/add/${encodeURIComponent(setName)}`, 'put')
     }
 
     static async getInvoiceDetails(id: number) {

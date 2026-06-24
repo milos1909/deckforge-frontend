@@ -32,7 +32,7 @@ async function loadSets() {
         const rsp = await SetService.getSets(search.value, sortDirection.value, maxPrice.value, PAGE_SIZE, offset.value)
         
         sets.value = rsp.data.sets
-        totalResults.value = rsp.data.total
+        totalResults.value = rsp.data.count
     } finally {
         loading.value = false
     }

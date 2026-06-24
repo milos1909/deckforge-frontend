@@ -4,15 +4,19 @@ import CardTooltip from '@/components/CardTooltip.vue'
 import PaginationControls from '@/components/PaginationControls.vue'
 import { getCardImage, setFallbackImage } from '@/helpers/image'
 import type { CardModel } from '@/models/card.model'
+import type { DeckCardModel } from '@/models/deck.model'
 import { onMounted, ref, watch } from 'vue'
 import { DeckService } from '@/services/deck.service'
 import { useAuth }  from '@/hooks/auth.hook'
 import { useCardSearch } from '@/hooks/cardSearch.hook'
 import { usePagination } from '@/hooks/pagination.hook'
+import { useRoute, useRouter } from 'vue-router'
 
 type DeckZone = 'main' | 'extra' | 'side'
 
 const { auth } = useAuth()
+const route = useRoute()
+const router = useRouter()
 
 const deckId = ref<number | null>(null)
 const deckName = ref('New Deck')
@@ -72,6 +76,33 @@ const {
   resetFilters,
   resetTypeSpecificFilters,
 } = useCardSearch(pagination)
+
+async function loadExistingDeck() {
+  const id = Number(route.params.id)
+
+  if (!id || !Number.isInteger(id) || id <= 0) return
+
+  try {
+    const rsp = await DeckService.getDeckById(id)
+
+    if (!rsp.data.canEdit) {
+      alert('You can only edit cards in your own decks.')
+      await router.push(`/deck/${id}`)
+      return
+    }
+
+    const loadedDeck = rsp.data.deck
+
+    deckId.value = loadedDeck.id
+    deckName.value = loadedDeck.name
+    mainDeck.value = loadedDeck.deckCards.filter((deckCard: DeckCardModel) => deckCard.type === 'main').map((deckCard: DeckCardModel) => deckCard.card)
+    extraDeck.value = loadedDeck.deckCards.filter((deckCard: DeckCardModel) => deckCard.type === 'extra').map((deckCard: DeckCardModel) => deckCard.card)
+    sideDeck.value = loadedDeck.deckCards.filter((deckCard: DeckCardModel) => deckCard.type === 'side').map((deckCard: DeckCardModel) => deckCard.card)
+  } catch {
+    alert('Deck could not be opened in the builder.')
+    await router.push('/deckbuilder')
+  }
+}
 
 function isExtraDeckCard(card: CardModel) {
   return ['Fusion', 'Synchro', 'Xyz', 'Link'].some((type) => card.type.includes(type))
@@ -158,6 +189,7 @@ watch(selectedType, async () => {
 watch(currentPage, loadCards)
 
 onMounted(async () => {
+  await loadExistingDeck()
   await loadFilterOptions()
   await loadCards()
 })
@@ -202,7 +234,7 @@ onMounted(async () => {
             <div class="deck-zone">
               <div class="zone-header bg-dark">
                 <h3 class="h6 fw-bold mb-0">Main Deck</h3>
-                <span>{{ mainDeck.length }}/{{ MAIN_LIMIT }}</span>
+                <span :class="{ 'deck-count-invalid': mainDeck.length < 40 }">{{ mainDeck.length }}/{{ MAIN_LIMIT }}</span>
               </div>
               <div v-if="mainDeck.length" class="deck-card-grid main-grid">
                 <CardTooltip v-for="(card, index) in mainDeck" :key="`main-${card.id}-${index}`" :card="card">
@@ -412,6 +444,10 @@ onMounted(async () => {
 .zone-header span {
   color: #cbd5e1;
   font-weight: 700;
+}
+
+.zone-header .deck-count-invalid {
+  color: #ff6b6b;
 }
 
 .extra-zone .zone-header {

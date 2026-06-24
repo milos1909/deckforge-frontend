@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { errorMessage as getErrorMessage } from '@/helpers/error';
 import { UserService } from '@/services/user.service';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -13,14 +14,31 @@ const payload = ref({
     repeat: ''
 })
 
+const errorMessage = ref('')
+
 function signUp(){
-    if(payload.value.username == '' || payload.value.email == '') return
-    if(payload.value.password == '' || payload.value.repeat == '') return
-    if(payload.value.repeat !== payload.value.password) return
+    errorMessage.value = ''
+
+    if(payload.value.username == '' || payload.value.email == '') {
+        errorMessage.value = 'Username and email are required.'
+        return
+    }
+
+    if(payload.value.password == '' || payload.value.repeat == '') {
+        errorMessage.value = 'Password and repeated password are required.'
+        return
+    }
+
+    if(payload.value.repeat !== payload.value.password) {
+        errorMessage.value = 'Passwords do not match.'
+        return
+    }
 
     UserService.register(payload.value).then(rsp => {
         sessionStorage.setItem('verify_email', payload.value.email)
         router.push('/verify')
+    }).catch(e => {
+        errorMessage.value = getErrorMessage(e, 'Account could not be created.')
     })
 }
 </script>
@@ -29,6 +47,9 @@ function signUp(){
     <div class="form-signin m-auto">
         <img class="mb-4" src="/puzzle.jpg" alt="" width="42" height="42" />
         <h1 class="h3 mb-3 fw-normal">Please sign up</h1>
+        <div v-if="errorMessage" class="alert alert-danger py-2" role="alert">
+            {{ errorMessage }}
+        </div>
         <div class="form-floating">
             <input type="username" class="form-control" id="username" placeholder="Username" v-model="payload.username" />
             <label for="username">Username</label>
@@ -52,6 +73,5 @@ function signUp(){
         <div>
             Already have an account? <RouterLink to="/login">Log in</RouterLink>
         </div>
-        <p class="mt-5 mb-3 text-body-secondary">© {{ year }}</p>
     </div>
 </template>

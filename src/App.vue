@@ -1,10 +1,8 @@
 <script setup lang="ts">
-  import { useRoute } from 'vue-router';
   import { useAuth } from './hooks/auth.hook';
 
   const year = new Date().getFullYear()
   const { logout, auth } = useAuth()
-  const route = useRoute()
 </script>
 
 <template>
@@ -17,25 +15,25 @@
         </RouterLink>
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-2">
           <li class="nav-item">
-            <RouterLink class="nav-link active" to="/deckbuilder">
+            <RouterLink class="nav-link" to="/deckbuilder">
               <i class="fa-solid fa-hammer"></i>
               Deck Builder
             </RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link active" to="/decks">
+            <RouterLink class="nav-link" to="/decks">
               <i class="fa-solid fa-compass"></i>
               Browse Decks
             </RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link active" to="/card-catalogue">
+            <RouterLink class="nav-link" to="/card-catalogue">
               <i class="fa-solid fa-layer-group"></i>
               Card Catalogue
             </RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link active" to="/shop">
+            <RouterLink class="nav-link" to="/shop">
               <i class="fa-solid fa-basket-shopping"></i>
               Set Shop
             </RouterLink>
@@ -44,13 +42,13 @@
         <ul class="navbar-nav ms-auto gap-2">
         <template v-if="auth">
           <li class="nav-item">
-            <RouterLink class="nav-link active" to="/cart">
+            <RouterLink class="nav-link" to="/cart">
               <i class="fa-solid fa-cart-shopping"></i>
               Cart
             </RouterLink>
           </li>
           <li class="nav-item">
-            <RouterLink class="nav-link active" to="/user">
+            <RouterLink class="nav-link" to="/user">
               <i class="fa-solid fa-user"></i>
               Profile
             </RouterLink>
@@ -63,7 +61,7 @@
         </template>
         <template v-else>
             <li class="nav-item">
-              <RouterLink class="nav-link active" to="/login">
+              <RouterLink class="nav-link" to="/login">
                 Login
               </RouterLink>
             </li>
@@ -79,7 +77,7 @@
     <main class="content">
       <RouterView/>
     </main>
-    <footer class="footer d-flex justify-content-center align-items-center py-3 border-top bg-dark text-light">
+    <footer class="footer d-flex justify-content-center align-items-center gap-2 py-3 bg-dark text-light">
       <img src="/puzzle.jpg" alt="Logo" width="32" height="32" /> &copy; {{ year }} DeckForge 
     </footer>
   </div>
@@ -96,6 +94,15 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+  }
+
+  .navbar .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .navbar .nav-link:hover,
+  .navbar .router-link-active {
+    color: #ffffff;
   }
 
    .footer {

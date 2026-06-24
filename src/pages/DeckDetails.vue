@@ -2,12 +2,15 @@
 import CardTooltip from '@/components/CardTooltip.vue'
 import Loading from '@/components/Loading.vue'
 import { getCardImage, getCroppedCardImage, setFallbackImage } from '@/helpers/image'
+import { useAuth } from '@/hooks/auth.hook'
 import { DECK_TYPE_LABELS, type DeckCardModel, type DeckModel, type DeckType, type DeckZone } from '@/models/deck.model'
 import { DeckService } from '@/services/deck.service'
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
+const { auth } = useAuth()
 
 const deck = ref<DeckModel | null>(null)
 const canEdit = ref(false)
@@ -15,6 +18,7 @@ const loading = ref(true)
 const loadError = ref(false)
 const editingMetadata = ref(false)
 const savingMetadata = ref(false)
+const copyingDeck = ref(false)
 const saveError = ref('')
 
 const nameInput = ref('')
@@ -131,6 +135,26 @@ async function saveMetadata() {
     }
 }
 
+async function copyDeck() {
+    if (!deck.value) return
+
+    if (!auth.value) {
+        alert('You must be logged in to copy decks.')
+        return
+    }
+
+    copyingDeck.value = true
+
+    try {
+        const rsp = await DeckService.copyDeck(deck.value.id)
+        await router.push(`/deck/${rsp.data.id}`)
+    } catch {
+        alert('Deck could not be copied.')
+    } finally {
+        copyingDeck.value = false
+    }
+}
+
 onMounted(loadDeck)
 
 watch(() => route.params.id, loadDeck)
@@ -182,16 +206,34 @@ watch(() => route.params.id, loadDeck)
                             <span><i class="fa-solid fa-eye"></i> {{ formatViews(deck.viewCount) }}</span>
                             <span>Updated {{ formatDate(deck.updatedAt || deck.createdAt) }}</span>
                         </div>
-                    </div>
 
-                    <button
-                        v-if="canEdit"
-                        class="btn btn-light btn-sm overview-edit-button"
-                        @click="editingMetadata ? cancelMetadataEdit() : beginMetadataEdit()"
-                    >
-                        <i :class="editingMetadata ? 'fa-solid fa-eye-slash' : 'fa-solid fa-pen'"></i>
-                        {{ editingMetadata ? 'Hide details' : 'Edit details' }}
-                    </button>
+                        <div class="overview-actions">
+                            <button class="btn btn-primary btn-sm" type="button" :disabled="copyingDeck" @click="copyDeck">
+                                <span v-if="copyingDeck" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                <i v-else class="fa-solid fa-copy"></i>
+                                Copy deck
+                            </button>
+
+                            <RouterLink
+                                v-if="canEdit"
+                                class="btn btn-success btn-sm"
+                                :to="`/deckbuilder/${deck.id}`"
+                            >
+                                <i class="fa-solid fa-layer-group"></i>
+                                Edit cards
+                            </RouterLink>
+
+                            <button
+                                v-if="canEdit"
+                                class="btn btn-light btn-sm overview-edit-button"
+                                type="button"
+                                @click="editingMetadata ? cancelMetadataEdit() : beginMetadataEdit()"
+                            >
+                                <i :class="editingMetadata ? 'fa-solid fa-eye-slash' : 'fa-solid fa-pen'"></i>
+                                {{ editingMetadata ? 'Hide details' : 'Edit details' }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -277,7 +319,7 @@ watch(() => route.params.id, loadDeck)
                 <section class="deck-zone main-zone">
                     <div class="zone-header">
                         <h2>Main Deck</h2>
-                        <span>{{ mainDeck.length }}/60</span>
+                        <span :class="{ 'deck-count-invalid': mainDeck.length < 40 }">{{ mainDeck.length }}/60</span>
                     </div>
                     <div v-if="mainDeck.length" class="deck-card-grid">
                         <CardTooltip v-for="deckCard in mainDeck" :key="deckCard.id" :card="deckCard.card">
@@ -343,40 +385,54 @@ watch(() => route.params.id, loadDeck)
 }
 
 .deck-overview {
-    background: #212529;
+    background: #070b14;
     color: #ffffff;
-    min-height: 330px;
+    min-height: 360px;
     overflow: hidden;
     position: relative;
 }
 
 .overview-cover {
     height: 100%;
-    inset: 0;
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.08) 16%, rgba(0, 0, 0, 0.72) 34%, #000000 52%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.08) 16%, rgba(0, 0, 0, 0.72) 34%, #000000 52%);
     object-fit: cover;
     object-position: center 30%;
+    opacity: 0.95;
     position: absolute;
-    width: 100%;
+    right: 0;
+    top: 0;
+    width: 52%;
 }
 
 .overview-shade {
-    background: linear-gradient(90deg, rgba(9, 14, 23, 0.96) 0%, rgba(9, 14, 23, 0.82) 48%, rgba(9, 14, 23, 0.48) 100%);
+    background:
+        linear-gradient(90deg, #070b14 0%, #070b14 45%, rgba(7, 11, 20, 0.78) 62%, rgba(7, 11, 20, 0.24) 100%);
     inset: 0;
     position: absolute;
 }
 
 .overview-content {
-    align-items: flex-end;
+    align-items: center;
     display: flex;
+    gap: 2rem;
     justify-content: space-between;
-    min-height: 330px;
+    min-height: 360px;
     padding-bottom: 2.5rem;
     padding-top: 2.5rem;
     position: relative;
+    z-index: 1;
 }
 
 .deck-identity {
     max-width: 720px;
+}
+
+.overview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1.25rem;
 }
 
 .deck-summary {
@@ -396,11 +452,11 @@ watch(() => route.params.id, loadDeck)
 }
 
 .deck-type-meta {
-    background: #0f766e;
+    background: #9f1239;
 }
 
 .deck-type-rogue {
-    background: #9f1239;
+    background: #0f766e;
 }
 
 .deck-type-casual {
@@ -568,6 +624,10 @@ watch(() => route.params.id, loadDeck)
     font-weight: 700;
 }
 
+.zone-header > .deck-count-invalid {
+    color: #ff6b6b;
+}
+
 .extra-zone {
     background: #ede9fe;
 }
@@ -630,6 +690,11 @@ watch(() => route.params.id, loadDeck)
         align-items: flex-start;
         flex-direction: column;
         gap: 1.5rem;
+    }
+
+    .overview-cover {
+        opacity: 0.35;
+        width: 100%;
     }
 
     .metadata-grid {

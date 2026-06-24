@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { errorMessage as getErrorMessage } from '@/helpers/error';
 import { UserService } from '@/services/user.service';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -8,14 +9,21 @@ const year = new Date().getFullYear()
 const code = ref<number>()
 const router = useRouter()
 const email = sessionStorage.getItem('verify_email')
+const errorMessage = ref('')
 
 function verify(){
+    errorMessage.value = ''
+
     if(code.value == null) {
-        alert("Code can't be empty") 
+        errorMessage.value = "Code can't be empty."
         return
     }
     
-    UserService.verifyEmail(code.value).then(rsp => router.push('/login')).catch(e => alert('Error: ' + e.message))
+    UserService.verifyEmail(code.value)
+        .then(rsp => router.push('/login'))
+        .catch(e => {
+            errorMessage.value = getErrorMessage(e, 'Email could not be verified.')
+        })
 }
 </script>
 
@@ -25,6 +33,9 @@ function verify(){
         <h1 class="h3 mb-3 fw-normal">Verify your email</h1>
         <div class="alert alert-warning" role="alert">
             The verification code has been sent to {{ email ?? 'your email' }} adress
+        </div>
+        <div v-if="errorMessage" class="alert alert-danger py-2" role="alert">
+            {{ errorMessage }}
         </div>
         <div class="form-floating">
             <input type="number" class="form-control" id="code" placeholder="Password" v-model="code" />

@@ -13,7 +13,7 @@ const loading = ref(false)
 const search = ref('')
 const sortBy = ref<'createdAt' | 'viewCount'>('createdAt')
 
-const PAGE_SIZE = 16
+const PAGE_SIZE = 12
 
 const {
     offset,
@@ -31,7 +31,7 @@ async function loadDecks() {
         const rsp = await DeckService.getDecks(search.value, sortBy.value, PAGE_SIZE, offset.value)
 
         decks.value = rsp.data.decks
-        totalResults.value = rsp.data.total
+        totalResults.value = rsp.data.count
     } finally {
         loading.value = false
     }
@@ -201,7 +201,8 @@ onMounted(loadDecks)
 
 .deck-grid {
     display: grid;
-    gap: 1rem;
+    column-gap: 0.75rem;
+    row-gap: 1rem;
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 

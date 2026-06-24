@@ -25,7 +25,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/deckbuilder',
+      path: '/deckbuilder/:id?',
       component: DeckBuilder,
       meta: {
         title: 'Deck Builder'

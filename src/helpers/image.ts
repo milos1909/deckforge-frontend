@@ -14,5 +14,5 @@ export function setFallbackImage(event: Event) {
     const img = event.target as HTMLImageElement
 
     img.onerror = null
-    img.src = 'back_high.jpg'
+    img.src = '/back_high.jpg'
 }

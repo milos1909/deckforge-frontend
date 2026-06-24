@@ -11,11 +11,15 @@ export class DeckService {
             offset: String(offset)
         })
 
-        return await ApiService.useAxios(`/deck?${params.toString()}`, 'get', {}, 'optional')
+        return await ApiService.useAxios(`/deck?${params.toString()}`, 'get', {}, 'none')
     }
 
     static async getDeckById(id: number) {
         return await ApiService.useAxios<DeckDetailsResponse>(`/deck/${id}`, 'get', {}, 'optional')
+    }
+
+    static async copyDeck(id: number) {
+        return await ApiService.useAxios(`/deck/${id}/copy`, 'post')
     }
 
     static async createDeck(obj: any) {

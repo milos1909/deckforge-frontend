@@ -92,7 +92,6 @@ function hideBrokenCover(event: Event) {
     border-radius: 6px;
     color: #ffffff;
     display: block;
-    min-height: 190px;
     overflow: hidden;
     position: relative;
     text-decoration: none;
@@ -202,7 +201,7 @@ function hideBrokenCover(event: Event) {
 
 @media (max-width: 575.98px) {
     .deck-preview-card {
-        min-height: 180px;
+        aspect-ratio: 1.75;
     }
 }
 </style>

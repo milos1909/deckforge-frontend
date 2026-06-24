@@ -9,12 +9,12 @@ const auth = ref<AuthModel | null>(AuthService.getAuth())
 export function useAuth() {
     const router = useRouter()
     
-    function login(payload: any) {
-        UserService.login(payload).then(rsp => {
+    async function login(payload: any) {
+        const rsp = await UserService.login(payload)
+
             AuthService.saveAuth(rsp.data)
             auth.value = rsp.data
             router.push('/')
-        })
     }
 
     function logout(e: Error | null = null) {

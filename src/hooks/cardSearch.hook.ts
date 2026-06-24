@@ -55,7 +55,7 @@ export function useCardSearch(pagination: ReturnType<typeof usePagination>) {
             const rsp = await CardService.getCards(search.value, pagination.pageSize, pagination.offset.value, activeFilters())
 
             cards.value = rsp.data.cards
-            pagination.totalResults.value = rsp.data.total  
+            pagination.totalResults.value = rsp.data.count  
         } finally {
             loading.value = false
         }

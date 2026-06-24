@@ -34,4 +34,21 @@ export class CardService {
     static async getCardAttributes() {
         return await ApiService.useAxios('/card/attributes', 'get', {}, 'none')
     }
+
+    static async getDecksByCard(cardId: number, limit: number) { 
+        const params = new URLSearchParams({
+            limit: String(limit)
+        })
+
+        return await ApiService.useAxios(`/card/${encodeURIComponent(cardId)}/decks?${params.toString()}`, 'get', {}, 'none')
+    }
+
+    static async getSetsByCard(cardId: number, limit: number, offset: number) { 
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset)
+        })
+
+        return await ApiService.useAxios(`/card/${encodeURIComponent(cardId)}/sets?${params.toString()}`, 'get', {}, 'none')
+    }
 }
