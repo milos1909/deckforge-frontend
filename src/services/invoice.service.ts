@@ -17,6 +17,10 @@ export class InvoiceService {
         return await ApiService.useAxios( `/invoice/cart/card/${encodeURIComponent(cardId)}`, 'put')
     }
 
+    static async addDeckToCart(deckId: number) {
+        return await ApiService.useAxios(`/invoice/cart/deck/${encodeURIComponent(deckId)}`, 'put')
+    }
+
     static async pay() {
         return await ApiService.useAxios('/invoice/pay', 'put')
     }

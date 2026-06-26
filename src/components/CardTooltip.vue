@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getCardImage, setFallbackImage } from '@/helpers/image'
 import { formatCardStatValue, getAttributeIcon, getRaceIcon } from '@/helpers/card'
+import { formatDisplayDate } from '@/helpers/date'
 import type { CardModel } from '@/models/card.model'
 import { computed, ref } from 'vue'
 
@@ -37,6 +38,16 @@ const showLevel = computed(() => {
   return !props.card.type.includes('Link') && props.card.level != null
 })
 
+const releaseDate = computed(() => {
+  return formatDisplayDate(props.card.tcgDate, '')
+})
+
+const cardPrice = computed(() => {
+  const price = Number(props.card.cardmarketPrice ?? 0)
+
+  return price > 0 ? price.toFixed(2) : ''
+})
+
 function hideBrokenIcon(event: Event) {
   const image = event.target as HTMLImageElement
   image.style.display = 'none'
@@ -71,7 +82,14 @@ function hideTooltip() {
 
   <Teleport to="body">
     <div v-if="visible" class="card-tooltip bg-dark" :style="tooltipStyle">
-      <img class="tooltip-image" :src="getCardImage(card.id)" :alt="card.name" @error="setFallbackImage" />
+      <div class="tooltip-media">
+        <img class="tooltip-image" :src="getCardImage(card.id)" :alt="card.name" @error="setFallbackImage" />
+
+        <div v-if="cardPrice || releaseDate" class="tooltip-market-meta">
+          <span v-if="cardPrice">{{ cardPrice }} €</span>
+          <span v-if="releaseDate">{{ releaseDate }}</span>
+        </div>
+      </div>
 
       <div class="tooltip-details">
         <div class="tooltip-heading">
@@ -126,10 +144,31 @@ function hideTooltip() {
   z-index: 2000;
 }
 
+.tooltip-media {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  width: 154px;
+}
+
 .tooltip-image {
   height: auto;
-  flex: 0 0 auto;
-  width: 154px;
+  width: 100%;
+}
+
+.tooltip-market-meta {
+  color: #cbd5e1;
+  display: grid;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 0.15rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.tooltip-market-meta span:first-child {
+  color: #ffffff;
 }
 
 .tooltip-details {
@@ -247,7 +286,10 @@ function hideTooltip() {
   }
 
   .tooltip-image {
-    flex-basis: 96px;
+    width: 100%;
+  }
+
+  .tooltip-media {
     width: 96px;
   }
 }

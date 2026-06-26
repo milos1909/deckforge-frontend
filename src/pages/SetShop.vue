@@ -69,45 +69,49 @@ onMounted(async () => {
 
 <template>
     <div class="shop-page">
+        <div class="shop-top-panel">
+            <div class="container shop-top-content">
+                <div class="shop-header mb-3">
+                    <div>
+                        <h1 class="h2 fw-bold mb-1">Set Shop</h1>
+                        <p class="text-secondary mb-0">Browse sealed Yu-Gi-Oh! sets and expand your collection.</p>
+                    </div>
+                </div>
+
+                <div class="shop-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="input-group shop-search">
+                        <span class="input-group-text">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input v-model="search" @keyup.enter="applyFilters" type="text" class="form-control" placeholder="Search sets...">
+                        <button class="btn btn-primary" @click="applyFilters">
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <div class="filter-controls">
+                        <div class="shop-filter">
+                            <select v-model="sortDirection" class="form-select form-select-sm" @change="applyFilters">
+                                <option value="DESC">Newest first</option>
+                                <option value="ASC">Oldest first</option>
+                            </select>
+                        </div>
+
+                        <div class="price-filter">
+                            <label class="form-label small text-secondary mb-1">Max price: {{ maxPrice }} EUR</label>
+                            <input v-model.number="maxPrice" type="range" class="form-range" min="0" max="300" step="1" @change="applyFilters">
+                        </div>
+
+                        <button class="btn btn-outline-secondary btn-sm reset-button" @click="resetFilters">
+                            <i class="fa-solid fa-filter-circle-xmark"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="container page-content">
-            <div class="shop-header mb-3">
-                <div>
-                    <h1 class="h2 fw-bold mb-1">Set Shop</h1>
-                    <p class="text-secondary mb-0">Browse sealed Yu-Gi-Oh! sets and expand your collection.</p>
-                </div>
-            </div>
-
-            <div class="shop-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3">
-                <div class="input-group shop-search">
-                    <span class="input-group-text">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </span>
-                    <input v-model="search" @keyup.enter="applyFilters" type="text" class="form-control" placeholder="Search sets...">
-                    <button class="btn btn-primary" @click="applyFilters">
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
-
-                <div class="filter-controls">
-                    <div class="shop-filter">
-                        <select v-model="sortDirection" class="form-select form-select-sm" @change="applyFilters">
-                            <option value="DESC">Newest first</option>
-                            <option value="ASC">Oldest first</option>
-                        </select>
-                    </div>
-
-                    <div class="price-filter">
-                        <label class="form-label small text-secondary mb-1">Max price: {{ maxPrice }} EUR</label>
-                        <input v-model.number="maxPrice" type="range" class="form-range" min="0" max="300" step="1" @change="applyFilters">
-                    </div>
-
-                    <button class="btn btn-outline-secondary btn-sm reset-button" @click="resetFilters">
-                        <i class="fa-solid fa-filter-circle-xmark"></i>
-                        Reset
-                    </button>
-                </div>
-            </div>
-
             <div class="row g-4" v-if="sets.length > 0">
                 <div v-for="set in sets" :key="set.setName" class="col-12 col-sm-6 col-lg-4 col-xxl-3">
                     <RouterLink
@@ -175,14 +179,21 @@ onMounted(async () => {
         flex-direction: column;
         flex: 1;
         padding-bottom: 2.25rem;
+    }
+
+    .shop-top-panel {
+        background: #ffffff;
+        border-bottom: 1px solid #dfe4ec;
+        box-shadow: 0 10px 24px rgba(18, 29, 43, 0.04);
+        margin-bottom: 1.5rem;
+    }
+
+    .shop-top-content {
+        padding-bottom: 1rem;
         padding-top: 2rem;
     }
 
     .shop-toolbar {
-        background: #ffffff;
-        border: 1px solid #dfe4ec;
-        border-radius: 8px;
-        box-shadow: 0 10px 24px rgba(18, 29, 43, 0.06);
     }
 
     .shop-search {

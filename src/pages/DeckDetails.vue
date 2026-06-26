@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import CardTooltip from '@/components/CardTooltip.vue'
 import Loading from '@/components/Loading.vue'
+import { formatDisplayDate } from '@/helpers/date'
+import { getDeckTotalPrice, getMainDeckTypeCounts, sortDeckCardModels } from '@/helpers/deck'
 import { getCardImage, getCroppedCardImage, setFallbackImage } from '@/helpers/image'
 import { useAuth } from '@/hooks/auth.hook'
 import { DECK_TYPE_LABELS, type DeckCardModel, type DeckModel, type DeckType, type DeckZone } from '@/models/deck.model'
 import { DeckService } from '@/services/deck.service'
+import { InvoiceService } from '@/services/invoice.service'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -19,6 +22,7 @@ const loadError = ref(false)
 const editingMetadata = ref(false)
 const savingMetadata = ref(false)
 const copyingDeck = ref(false)
+const buyingDeck = ref(false)
 const saveError = ref('')
 
 const nameInput = ref('')
@@ -30,6 +34,9 @@ const deckTypeInput = ref<DeckType>('casual')
 const mainDeck = computed(() => cardsInZone('main'))
 const extraDeck = computed(() => cardsInZone('extra'))
 const sideDeck = computed(() => cardsInZone('side'))
+const allDeckCards = computed(() => (deck.value?.deckCards ?? []).map(deckCard => deckCard.card))
+const deckTotalPrice = computed(() => getDeckTotalPrice(allDeckCards.value))
+const mainDeckTypeCounts = computed(() => getMainDeckTypeCounts(mainDeck.value.map(deckCard => deckCard.card)))
 
 const coverOptions = computed(() => {
     const uniqueCards = new Map<number, DeckCardModel['card']>()
@@ -45,18 +52,12 @@ function cardsInZone(zone: DeckZone) {
     return (deck.value?.deckCards ?? []).filter(deckCard => deckCard.type === zone)
 }
 
-function formatDate(value: string | null) {
-    if (!value) return 'Not available'
-
-    return new Intl.DateTimeFormat('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }).format(new Date(value))
-}
-
 function formatViews(value: number) {
     return `${value.toLocaleString()} ${value === 1 ? 'view' : 'views'}`
+}
+
+function formatDeckPrice(value: number) {
+    return value.toFixed(2)
 }
 
 function hideBrokenCover(event: Event) {
@@ -95,7 +96,9 @@ async function loadDeck() {
 
     try {
         const rsp = await DeckService.getDeckById(id)
-        deck.value = rsp.data.deck
+        const loadedDeck = rsp.data.deck
+        loadedDeck.deckCards = sortDeckCardModels(loadedDeck.deckCards)
+        deck.value = loadedDeck
         canEdit.value = rsp.data.canEdit
     } catch {
         loadError.value = true
@@ -155,6 +158,26 @@ async function copyDeck() {
     }
 }
 
+async function buyDeck() {
+    if (!deck.value) return
+
+    if (!auth.value) {
+        alert('You must be logged in to buy decks.')
+        return
+    }
+
+    buyingDeck.value = true
+
+    try {
+        await InvoiceService.addDeckToCart(deck.value.id)
+        alert('Deck added to cart.')
+    } catch {
+        alert('Deck could not be added to cart.')
+    } finally {
+        buyingDeck.value = false
+    }
+}
+
 onMounted(loadDeck)
 
 watch(() => route.params.id, loadDeck)
@@ -200,14 +223,18 @@ watch(() => route.params.id, loadDeck)
                         </p>
 
                         <div class="deck-summary">
-                            <span>{{ mainDeck.length }} Main</span>
-                            <span>{{ extraDeck.length }} Extra</span>
-                            <span>{{ sideDeck.length }} Side</span>
+                            <span><i class="fa-solid fa-cart-shopping"></i> {{ formatDeckPrice(deckTotalPrice) }} €</span>
                             <span><i class="fa-solid fa-eye"></i> {{ formatViews(deck.viewCount) }}</span>
-                            <span>Updated {{ formatDate(deck.updatedAt || deck.createdAt) }}</span>
+                            <span>Updated {{ formatDisplayDate(deck.updatedAt || deck.createdAt, 'Not available') }}</span>
                         </div>
 
                         <div class="overview-actions">
+                            <button class="btn btn-success btn-sm" type="button" :disabled="buyingDeck" @click="buyDeck">
+                                <span v-if="buyingDeck" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                <i v-else class="fa-solid fa-cart-shopping"></i>
+                                Buy deck
+                            </button>
+
                             <button class="btn btn-primary btn-sm" type="button" :disabled="copyingDeck" @click="copyDeck">
                                 <span v-if="copyingDeck" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
                                 <i v-else class="fa-solid fa-copy"></i>
@@ -216,7 +243,7 @@ watch(() => route.params.id, loadDeck)
 
                             <RouterLink
                                 v-if="canEdit"
-                                class="btn btn-success btn-sm"
+                                class="btn btn-outline-light btn-sm"
                                 :to="`/deckbuilder/${deck.id}`"
                             >
                                 <i class="fa-solid fa-layer-group"></i>
@@ -318,7 +345,17 @@ watch(() => route.params.id, loadDeck)
 
                 <section class="deck-zone main-zone">
                     <div class="zone-header">
-                        <h2>Main Deck</h2>
+                        <div class="zone-title-group">
+                            <h2>Main Deck</h2>
+                            <div class="main-type-counts">
+                                <span class="type-swatch type-swatch-monster"></span>
+                                <span>{{ mainDeckTypeCounts.monsters }}</span>
+                                <span class="type-swatch type-swatch-spell"></span>
+                                <span>{{ mainDeckTypeCounts.spells }}</span>
+                                <span class="type-swatch type-swatch-trap"></span>
+                                <span>{{ mainDeckTypeCounts.traps }}</span>
+                            </div>
+                        </div>
                         <span :class="{ 'deck-count-invalid': mainDeck.length < 40 }">{{ mainDeck.length }}/60</span>
                     </div>
                     <div v-if="mainDeck.length" class="deck-card-grid">
@@ -616,6 +653,40 @@ watch(() => route.params.id, loadDeck)
     font-size: 1rem;
     font-weight: 800;
     margin: 0;
+}
+
+.zone-title-group {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.main-type-counts {
+    align-items: center;
+    color: #cbd5e1;
+    display: flex;
+    flex-wrap: wrap;
+    font-weight: 700;
+    gap: 0.25rem;
+}
+
+.type-swatch {
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+}
+
+.type-swatch-monster {
+    background: #c56a2c;
+}
+
+.type-swatch-spell {
+    background: #138b78;
+}
+
+.type-swatch-trap {
+    background: #b8328a;
 }
 
 .zone-header > span {

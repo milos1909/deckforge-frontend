@@ -46,18 +46,6 @@ async function submitSearch() {
     await loadDecks()
 }
 
-async function resetFilters() {
-    search.value = ''
-    sortBy.value = 'createdAt'
-
-    if (currentPage.value !== 1) {
-        currentPage.value = 1
-        return
-    }
-
-    await loadDecks()
-}
-
 watch(currentPage, loadDecks)
 watch(sortBy, submitSearch)
 
@@ -66,47 +54,46 @@ onMounted(loadDecks)
 
 <template>
     <div class="deck-browser-page">
-        <div class="container page-content">
-            <div class="browser-header mb-3">
-                <div>
-                    <h1 class="h2 fw-bold mb-1">Browse Decks</h1>
-                    <p class="text-secondary mb-0">Find public deck lists from the community.</p>
-                </div>
-            </div>
-
-            <div class="browser-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 p-3">
-                <div class="input-group browser-search">
-                    <span class="input-group-text">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </span>
-                    <input
-                        v-model="search"
-                        @keyup.enter="submitSearch"
-                        type="text"
-                        class="form-control"
-                        placeholder="Search decks..."
-                    >
-                    <button class="btn btn-primary" @click="submitSearch">
-                        <i class="fa-solid fa-arrow-right"></i>
-                    </button>
+        <div class="browser-top-panel">
+            <div class="container browser-top-content">
+                <div class="browser-header mb-3">
+                    <div>
+                        <h1 class="h2 fw-bold mb-1">Browse Decks</h1>
+                        <p class="text-secondary mb-0">Find public deck lists from the community.</p>
+                    </div>
                 </div>
 
-                <div class="filter-controls">
-                    <div class="sort-filter">
-                        <span class="filter-label">Sort by</span>
-                        <select v-model="sortBy" class="form-select form-select-sm">
-                            <option value="createdAt">Newest</option>
-                            <option value="viewCount">Most viewed</option>
-                        </select>
+                <div class="browser-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="input-group browser-search">
+                        <span class="input-group-text">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input
+                            v-model="search"
+                            @keyup.enter="submitSearch"
+                            type="text"
+                            class="form-control"
+                            placeholder="Search decks..."
+                        >
+                        <button class="btn btn-primary" @click="submitSearch">
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
                     </div>
 
-                    <button class="btn btn-outline-secondary btn-sm reset-button" @click="resetFilters" title="Reset filters">
-                        <i class="fa-solid fa-filter-circle-xmark"></i>
-                        Reset
-                    </button>
+                    <div class="filter-controls">
+                        <div class="sort-filter">
+                            <span class="filter-label">Sort by</span>
+                            <select v-model="sortBy" class="form-select form-select-sm">
+                                <option value="createdAt">Newest</option>
+                                <option value="viewCount">Most viewed</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
+        <div class="container page-content">
             <div v-if="loading" class="deck-state">
                 <Loading />
             </div>
@@ -156,14 +143,21 @@ onMounted(loadDecks)
     flex-direction: column;
     flex: 1;
     padding-bottom: 2.25rem;
+}
+
+.browser-top-panel {
+    background: #ffffff;
+    border-bottom: 1px solid #dfe4ec;
+    box-shadow: 0 10px 24px rgba(18, 29, 43, 0.04);
+    margin-bottom: 1.5rem;
+}
+
+.browser-top-content {
     padding-top: 2rem;
+    padding-bottom: 1rem;
 }
 
 .browser-toolbar {
-    background: #ffffff;
-    border: 1px solid #dfe4ec;
-    border-radius: 8px;
-    box-shadow: 0 10px 24px rgba(18, 29, 43, 0.06);
 }
 
 .browser-search {
@@ -193,10 +187,6 @@ onMounted(loadDecks)
 
 .sort-filter .form-select {
     width: 150px;
-}
-
-.reset-button {
-    white-space: nowrap;
 }
 
 .deck-grid {
@@ -240,8 +230,7 @@ onMounted(loadDecks)
     .browser-search,
     .filter-controls,
     .sort-filter,
-    .sort-filter .form-select,
-    .reset-button {
+    .sort-filter .form-select {
         max-width: none;
         width: 100%;
     }

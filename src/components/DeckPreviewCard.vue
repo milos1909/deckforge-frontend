@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDisplayDate } from '@/helpers/date'
 import { getCroppedCardImage } from '@/helpers/image'
 import { DECK_TYPE_LABELS } from '@/models/deck.model'
 import type { DeckSummaryModel } from '@/models/deck.model'
@@ -18,16 +19,6 @@ const props = withDefaults(defineProps<{
 })
 
 const displayDate = computed(() => props.dateValue || props.deck.updatedAt || props.deck.createdAt)
-
-function formatDate(value: string | null) {
-    if (!value) return 'Unknown'
-
-    return new Intl.DateTimeFormat('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }).format(new Date(value))
-}
 
 function formatViews(value: number | undefined) {
     const count = value ?? 0
@@ -73,7 +64,7 @@ function hideBrokenCover(event: Event) {
 
             <div class="deck-card-meta">
                 <span>
-                    {{ dateLabel }} {{ formatDate(displayDate) }}
+                    {{ dateLabel }} {{ formatDisplayDate(displayDate) }}
                 </span>
                 <span>
                     <i class="fa-solid fa-eye"></i>

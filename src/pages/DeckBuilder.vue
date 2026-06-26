@@ -2,10 +2,11 @@
 import Loading from '@/components/Loading.vue'
 import CardTooltip from '@/components/CardTooltip.vue'
 import PaginationControls from '@/components/PaginationControls.vue'
+import { getDeckTotalPrice, getMainDeckTypeCounts, sortCardsForDeck } from '@/helpers/deck'
 import { getCardImage, setFallbackImage } from '@/helpers/image'
 import type { CardModel } from '@/models/card.model'
 import type { DeckCardModel } from '@/models/deck.model'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { DeckService } from '@/services/deck.service'
 import { useAuth }  from '@/hooks/auth.hook'
 import { useCardSearch } from '@/hooks/cardSearch.hook'
@@ -25,6 +26,15 @@ const editingDeckName = ref(false)
 const mainDeck = ref<CardModel[]>([])
 const extraDeck = ref<CardModel[]>([])
 const sideDeck = ref<CardModel[]>([])
+
+const allDeckCards = computed(() => [
+  ...mainDeck.value,
+  ...extraDeck.value,
+  ...sideDeck.value
+])
+
+const deckTotalPrice = computed(() => getDeckTotalPrice(allDeckCards.value))
+const mainDeckTypeCounts = computed(() => getMainDeckTypeCounts(mainDeck.value))
 
 const PAGE_SIZE = 21
 const MAIN_LIMIT = 60
@@ -150,6 +160,16 @@ function removeCard(card: CardModel, zone: DeckZone) {
   }
 }
 
+function sortDecks() {
+  mainDeck.value = sortCardsForDeck(mainDeck.value)
+  extraDeck.value = sortCardsForDeck(extraDeck.value)
+  sideDeck.value = sortCardsForDeck(sideDeck.value)
+}
+
+function formatDeckPrice(value: number) {
+  return value.toFixed(2)
+}
+
 function finishDeckNameEdit() {
   deckName.value = deckName.value.trim() || 'New Deck'
   editingDeckName.value = false
@@ -225,15 +245,37 @@ onMounted(async () => {
                 </button>
                 <p class="text-secondary small mb-0">Tip: Click on a card to add/remove, right click adds card to side deck</p>
               </div>
-              <button type="button" class="btn btn-success btn-sm" @click="saveDeck()">
+              <div class="deck-actions">
+                <div class="deck-price-summary" title="Total deck price">
+                  <i class="fa-solid fa-cart-shopping"></i>
+                  <span>{{ formatDeckPrice(deckTotalPrice) }} €</span>
+                </div>
+
+                <button type="button" class="btn btn-outline-secondary btn-sm" @click="sortDecks">
+                  <i class="fa-solid fa-arrow-down-wide-short"></i>
+                  Sort
+                </button>
+
+                <button type="button" class="btn btn-success btn-sm" @click="saveDeck()">
                   <i class="fa-solid fa-floppy-disk"></i>
                   Save
-              </button>
+                </button>
+              </div>
             </div>
 
             <div class="deck-zone">
               <div class="zone-header bg-dark">
-                <h3 class="h6 fw-bold mb-0">Main Deck</h3>
+                <div class="zone-title-group">
+                  <h3 class="h6 fw-bold mb-0">Main Deck</h3>
+                  <div class="main-type-counts">
+                    <span class="type-swatch type-swatch-monster"></span>
+                    <span>{{ mainDeckTypeCounts.monsters }}</span>
+                    <span class="type-swatch type-swatch-spell"></span>
+                    <span>{{ mainDeckTypeCounts.spells }}</span>
+                    <span class="type-swatch type-swatch-trap"></span>
+                    <span>{{ mainDeckTypeCounts.traps }}</span>
+                  </div>
+                </div>
                 <span :class="{ 'deck-count-invalid': mainDeck.length < 40 }">{{ mainDeck.length }}/{{ MAIN_LIMIT }}</span>
               </div>
               <div v-if="mainDeck.length" class="deck-card-grid main-grid">
@@ -320,18 +362,18 @@ onMounted(async () => {
 
             <div v-if="showAdvancedFilters" class="deck-advanced-filters mb-3">
               <div class="deck-filter-field">
-                <label class="form-label small text-secondary">Type</label>
-                <select v-model="selectedType" class="form-select form-select-sm">
-                  <option value="">All types</option>
-                  <option v-for="type in cardTypes" :key="type" :value="type">{{ type }}</option>
-                </select>
-              </div>
-
-              <div class="deck-filter-field">
                 <label class="form-label small text-secondary">Archetype</label>
                 <select v-model="selectedArchetype" class="form-select form-select-sm" @change="applyFilters">
                   <option value="">All archetypes</option>
                   <option v-for="archetype in archetypes" :key="archetype" :value="archetype">{{ archetype }}</option>
+                </select>
+              </div>
+
+              <div class="deck-filter-field">
+                <label class="form-label small text-secondary">Type</label>
+                <select v-model="selectedType" class="form-select form-select-sm">
+                  <option value="">All types</option>
+                  <option v-for="type in cardTypes" :key="type" :value="type">{{ type }}</option>
                 </select>
               </div>
 
@@ -487,6 +529,60 @@ onMounted(async () => {
 
 .deck-name-input {
   max-width: 320px;
+}
+
+.deck-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.deck-price-summary {
+  align-items: center;
+  color: #172033;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.deck-price-summary i {
+  color: #198754;
+}
+
+.zone-title-group {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.main-type-counts {
+  align-items: center;
+  color: #cbd5e1;
+  display: flex;
+  flex-wrap: wrap;
+  font-weight: 700;
+  gap: 0.25rem;
+}
+
+.type-swatch {
+  display: inline-block;
+  height: 10px;
+  width: 10px;
+}
+
+.type-swatch-monster {
+  background: #c56a2c;
+}
+
+.type-swatch-spell {
+  background: #138b78;
+}
+
+.type-swatch-trap {
+  background: #b8328a;
 }
 
 .deck-card-grid {

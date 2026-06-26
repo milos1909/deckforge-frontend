@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import DeckPreviewCard from '@/components/DeckPreviewCard.vue'
 import Loading from '@/components/Loading.vue'
+import { formatDisplayDate } from '@/helpers/date'
 import { useAuth } from '@/hooks/auth.hook'
 import type { InvoiceModel } from '@/models/invoice.model'
 import type { UserModel } from '@/models/user.model'
@@ -36,14 +37,6 @@ function formatCurrency(value: number) {
         style: 'currency',
         currency: 'EUR'
     }).format(value)
-}
-
-function formatDate(value: string) {
-    return new Intl.DateTimeFormat('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    }).format(new Date(value))
 }
 
 onMounted(async () => {
@@ -163,7 +156,7 @@ onMounted(async () => {
                             <tbody>
                                 <tr v-for="invoice in invoices" :key="invoice.id">
                                     <td class="fw-semibold">#{{ String(invoice.id).padStart(6, '0') }}</td>
-                                    <td>{{ formatDate(invoice.pursTime) }}</td>
+                                    <td>{{ formatDisplayDate(invoice.pursTime) }}</td>
                                     <td>{{ getInvoiceItemCount(invoice) }}</td>
                                     <td class="text-end fw-bold">{{ formatCurrency(getInvoiceTotal(invoice)) }}</td>
                                     <td class="text-end">

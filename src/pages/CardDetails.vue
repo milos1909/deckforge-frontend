@@ -3,6 +3,7 @@ import DeckPreviewCard from '@/components/DeckPreviewCard.vue'
 import Loading from '@/components/Loading.vue'
 import PaginationControls from '@/components/PaginationControls.vue'
 import { formatCardStatValue, getCardStatIcon } from '@/helpers/card'
+import { formatDisplayDate } from '@/helpers/date'
 import { getCardImage, getSetImage, setFallbackImage } from '@/helpers/image'
 import { usePagination } from '@/hooks/pagination.hook'
 import type { CardModel } from '@/models/card.model'
@@ -30,7 +31,7 @@ const cardPrice = computed(() => Number(card.value?.cardmarketPrice ?? 0))
 const canBuyCard = computed(() => cardPrice.value > 0)
 
 function formatPrice(value: number) {
-    return `${value.toFixed(2)} EUR`
+    return `${value.toFixed(2)} €`
 }
 
 const statRows = computed(() => {
@@ -47,7 +48,8 @@ const statRows = computed(() => {
         { label: 'Scale', value: card.value.scale },
         { label: 'Link Rating', value: card.value.linkval },
         { label: 'ATK', value: card.value.atk },
-        { label: 'DEF', value: isLinkMonster ? undefined : card.value.def }
+        { label: 'DEF', value: isLinkMonster ? undefined : card.value.def },
+        { label: 'TCG Release', value: formatDisplayDate(card.value.tcgDate, '') }
     ].filter(row => row.value !== undefined && row.value !== null && row.value !== '')
         .map(row => ({
             ...row,
@@ -61,7 +63,7 @@ function hideBrokenStatIcon(event: Event) {
     image.style.display = 'none'
 }
 
-const primaryStats = computed(() => statRows.value.slice(0, 9))
+const primaryStats = computed(() => statRows.value.slice(0, 10))
 
 function setDetailsRoute(setName: string) {
     return `/set/${encodeURIComponent(setName)}`
