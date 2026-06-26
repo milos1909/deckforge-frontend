@@ -35,11 +35,11 @@ async function submitLogin() {
         <div v-if="errorMessage" class="alert alert-danger py-2" role="alert">
             {{ errorMessage }}
         </div>
-        <div class="form-floating">
+        <div class="form-floating mb-2">
             <input type="username" class="form-control" id="username" placeholder="name@example.com" v-model="payload.username" />
-            <label for="floatingInput">Username</label>
+            <label for="username">Username</label>
         </div>
-        <div class="form-floating">
+        <div class="form-floating mb-2">
             <input type="password" class="form-control" id="password" placeholder="Password" v-model="payload.password" />
             <label for="password">Password</label>
         </div>

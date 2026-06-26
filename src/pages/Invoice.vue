@@ -5,12 +5,11 @@ import type { InvoiceModel } from '@/models/invoice.model'
 import { InvoiceService } from '@/services/invoice.service'
 import QRCode from 'qrcode'
 import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getSetImage } from '@/helpers/image'
+import { useRoute } from 'vue-router'
+import { getCardImage, getSetImage, setFallbackImage } from '@/helpers/image'
 
 const { logout } = useAuth()
 const route = useRoute()
-const router = useRouter()
 
 const invoice = ref<InvoiceModel | null>(null)
 const loading = ref(true)
@@ -104,6 +103,49 @@ function formatDate(value?: string): string {
 
 function getItemTotal(item: InvoiceItemModel): number {
     return item.pricePerItem * item.count
+}
+
+function itemName(item: InvoiceItemModel) {
+    if (item.itemType === 'set') return item.set?.setName ?? 'Unknown set'
+    return item.card?.name ?? 'Unknown card'
+}
+
+function itemCode(item: InvoiceItemModel) {
+    if (item.itemType === 'set') return item.set?.setCode ?? 'No code'
+    return `CARD-${item.card?.id ?? item.id}`
+}
+
+function itemSubtitle(item: InvoiceItemModel) {
+    if (item.itemType === 'set') {
+        return item.set?.numOfCards != null ? `${item.set.numOfCards} cards` : 'Card count unavailable'
+    }
+
+    return item.card?.type ?? 'Single card'
+}
+
+function itemDetailLabel(item: InvoiceItemModel) {
+    return item.itemType === 'set' ? 'Release date' : 'Card type'
+}
+
+function itemDetailValue(item: InvoiceItemModel) {
+    if (item.itemType === 'set') return formatDate(item.set?.tcgDate)
+    return item.card?.type ?? '-'
+}
+
+function itemSecondDetailLabel(item: InvoiceItemModel) {
+    return item.itemType === 'set' ? 'Set code' : 'Card ID'
+}
+
+function itemSecondDetailValue(item: InvoiceItemModel) {
+    if (item.itemType === 'set') return item.set?.setCode ?? '-'
+    return item.card?.id ?? '-'
+}
+
+function itemImage(item: InvoiceItemModel) {
+    if (item.itemType === 'set' && item.set?.setCode) return getSetImage(item.set.setCode)
+    if (item.itemType === 'card' && item.card) return getCardImage(item.card.id)
+
+    return '/back_high.jpg'
 }
 
 </script>
@@ -257,43 +299,44 @@ function getItemTotal(item: InvoiceItemModel): number {
                                 <div class="row g-4 align-items-center">
                                     <div class="col-12 col-md-3 col-lg-2">
                                         <img
-                                            :src="getSetImage(item.set.setCode)"
-                                            :alt="item.set.setName"
+                                            :src="itemImage(item)"
+                                            :alt="itemName(item)"
                                             class="img-fluid rounded-4 shadow-sm set-image"
+                                            @error="setFallbackImage"
                                         >
                                     </div>
 
                                     <div class="col-12 col-md-9 col-lg-7">
                                         <div class="d-flex flex-wrap gap-2 mb-2">
                                             <span class="badge text-bg-primary">
-                                                {{ item.set.setCode }}
+                                                {{ item.itemType === 'set' ? 'Set' : 'Single card' }}
                                             </span>
 
                                             <span class="badge text-bg-secondary">
-                                                {{ item.set.numOfCards }} cards
+                                                {{ itemSubtitle(item) }}
                                             </span>
                                         </div>
 
                                         <h3 class="h4 fw-bold mb-2">
-                                            {{ item.set.setName }}
+                                            {{ itemName(item) }}
                                         </h3>
 
                                         <div class="row g-3 small">
                                             <div class="col-12 col-md-6">
                                                 <div class="text-body-secondary">
-                                                    Release date
+                                                    {{ itemDetailLabel(item) }}
                                                 </div>
                                                 <div class="fw-semibold">
-                                                    {{ formatDate(item.set.tcgDate) }}
+                                                    {{ itemDetailValue(item) }}
                                                 </div>
                                             </div>
 
                                             <div class="col-12 col-md-6">
                                                 <div class="text-body-secondary">
-                                                    Set code
+                                                    {{ itemSecondDetailLabel(item) }}
                                                 </div>
                                                 <div class="fw-semibold">
-                                                    {{ item.set.setCode }}
+                                                    {{ itemSecondDetailValue(item) }}
                                                 </div>
                                             </div>
                                         </div>
@@ -361,7 +404,7 @@ function getItemTotal(item: InvoiceItemModel): number {
                         <div class="receipt-paper">
                             <div class="text-center mb-2">
                                 <div class="receipt-title">ФИСКАЛНИ РАЧУН</div>
-                                <div class="receipt-small">Yu-Gi-Oh! Shop</div>
+                                <div class="receipt-small">DECKForge</div>
                                 <div class="receipt-small">Online Card Store</div>
                                 <div class="receipt-small">Београд, Србија</div>
                             </div>
@@ -399,11 +442,11 @@ function getItemTotal(item: InvoiceItemModel): number {
                                 class="receipt-item"
                             >
                                 <div class="receipt-item-title">
-                                    {{ item.set.setName }}
+                                    {{ itemName(item) }}
                                 </div>
 
                                 <div class="receipt-small mb-1">
-                                    {{ item.set.setCode }}
+                                    {{ itemCode(item) }}
                                 </div>
 
                                 <div class="receipt-row">

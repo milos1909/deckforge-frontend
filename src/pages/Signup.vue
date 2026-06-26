@@ -50,21 +50,21 @@ function signUp(){
         <div v-if="errorMessage" class="alert alert-danger py-2" role="alert">
             {{ errorMessage }}
         </div>
-        <div class="form-floating">
+        <div class="form-floating mb-2">
             <input type="username" class="form-control" id="username" placeholder="Username" v-model="payload.username" />
             <label for="username">Username</label>
         </div>
-        <div class="form-floating">
+        <div class="form-floating mb-2">
             <input type="email" class="form-control" id="email" placeholder="Email" v-model="payload.email" />
             <label for="email">Email</label>
         </div>
-        <div class="form-floating">
+        <div class="form-floating mb-2">
             <input type="password" class="form-control" id="password" placeholder="Password" v-model="payload.password" />
             <label for="password">Password</label>
         </div>
-        <div class="form-floating">
-            <input type="password" class="form-control" id="password" placeholder="Password" v-model="payload.repeat" />
-            <label for="password">Repeat Password</label>
+        <div class="form-floating mb-2">
+            <input type="password" class="form-control" id="repeat-password" placeholder="Password" v-model="payload.repeat" />
+            <label for="repeat-password">Repeat Password</label>
         </div>
         <button class="btn btn-primary w-100 my-2" @click="signUp"> 
             <i class="fa-solid fa-arrow-right-to-bracket"></i> 

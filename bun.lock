@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "yugioh-shop-frontend",
+      "name": "deckforge-frontend",
       "dependencies": {
         "@fortawesome/fontawesome-free": "^7.2.0",
         "axios": "^1.16.1",

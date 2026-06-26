@@ -13,5 +13,6 @@ export interface CardModel {
     archetype?: string
     scale?: number
     linkval?: number
+    cardmarketPrice: string
     card_sets: SetModel[]
 }

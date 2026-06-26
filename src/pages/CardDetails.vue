@@ -2,12 +2,14 @@
 import DeckPreviewCard from '@/components/DeckPreviewCard.vue'
 import Loading from '@/components/Loading.vue'
 import PaginationControls from '@/components/PaginationControls.vue'
+import { formatCardStatValue, getCardStatIcon } from '@/helpers/card'
 import { getCardImage, getSetImage, setFallbackImage } from '@/helpers/image'
 import { usePagination } from '@/hooks/pagination.hook'
 import type { CardModel } from '@/models/card.model'
 import type { DeckSummaryModel } from '@/models/deck.model'
 import type { SetModel } from '@/models/set.model'
 import { CardService } from '@/services/card.service'
+import { InvoiceService } from '@/services/invoice.service'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -17,16 +19,18 @@ const featuredDecks = ref<DeckSummaryModel[]>([])
 const sets = ref<SetModel[]>([])
 const loading = ref(false)
 const setsLoading = ref(false)
+const addingToCart = ref(false)
 
 const SET_PAGE_SIZE = 4
 const setPagination = usePagination(SET_PAGE_SIZE)
 
 const cardId = computed(() => Number(route.params.id))
 
-function formatStatValue(label: string, value: string | number | undefined) {
-    if ((label === 'ATK' || label === 'DEF') && value === -1) return '?'
+const cardPrice = computed(() => Number(card.value?.cardmarketPrice ?? 0))
+const canBuyCard = computed(() => cardPrice.value > 0)
 
-    return value
+function formatPrice(value: number) {
+    return `${value.toFixed(2)} EUR`
 }
 
 const statRows = computed(() => {
@@ -47,14 +51,35 @@ const statRows = computed(() => {
     ].filter(row => row.value !== undefined && row.value !== null && row.value !== '')
         .map(row => ({
             ...row,
-            value: formatStatValue(row.label, row.value)
+            icon: getCardStatIcon(row.label, row.value),
+            value: formatCardStatValue(row.label, row.value)
         }))
 })
+
+function hideBrokenStatIcon(event: Event) {
+    const image = event.target as HTMLImageElement
+    image.style.display = 'none'
+}
 
 const primaryStats = computed(() => statRows.value.slice(0, 9))
 
 function setDetailsRoute(setName: string) {
     return `/set/${encodeURIComponent(setName)}`
+}
+
+async function addCardToCart() {
+    if (!card.value || !canBuyCard.value) return
+
+    addingToCart.value = true
+
+    try {
+        await InvoiceService.addCardToCart(card.value.id)
+        alert('Card added to cart.')
+    } catch (e) {
+        alert('You must be logged in to add cards to cart.')
+    } finally {
+        addingToCart.value = false
+    }
 }
 
 async function loadCard() {
@@ -110,15 +135,45 @@ onMounted(loadCard)
                 </div>
 
                 <div class="card-info-panel col-12 col-lg-8">
-                    <span class="card-kicker">Yu-Gi-Oh! Card</span>
-                    <h1>{{ card.name }}</h1>
+                    <div class="card-title-row">
+                        <div class="card-title-copy">
+                            <span class="card-kicker">Yu-Gi-Oh! Card</span>
+                            <h1>{{ card.name }}</h1>
+                            <p class="card-type mb-4">{{ card.type }}</p>
+                        </div>
 
-                    <p class="card-type mb-4">{{ card.type }}</p>
+                        <div class="single-purchase">
+                            <span v-if="canBuyCard" class="single-price">
+                                {{ formatPrice(cardPrice) }}
+                            </span>
+                            <span v-else class="single-price unavailable">
+                                Price unavailable
+                            </span>
+
+                            <button
+                                class="btn btn-success btn-sm single-cart-button"
+                                :disabled="!canBuyCard || addingToCart"
+                                title="Add card to cart"
+                                @click="addCardToCart"
+                            >
+                                <i class="fa-solid fa-cart-plus"></i>
+                            </button>
+                        </div>
+                    </div>
 
                     <div class="stat-grid">
                         <div v-for="row in primaryStats" :key="row.label" class="stat-tile">
                             <span>{{ row.label }}</span>
-                            <strong>{{ row.value }}</strong>
+                            <strong class="stat-value">
+                                <img
+                                    v-if="row.icon"
+                                    :src="row.icon"
+                                    :alt="String(row.value)"
+                                    class="stat-icon"
+                                    @error="hideBrokenStatIcon"
+                                >
+                                {{ row.value }}
+                            </strong>
                         </div>
                     </div>
 
@@ -248,6 +303,17 @@ onMounted(loadCard)
     padding: 0.25rem 0 0;
 }
 
+.card-title-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.card-title-copy {
+    min-width: 0;
+}
+
 .card-kicker {
     color: #64748b;
     display: block;
@@ -271,6 +337,35 @@ onMounted(loadCard)
     color: #475569;
     font-size: 1rem;
     font-weight: 600;
+}
+
+.single-purchase {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.55rem;
+    padding-top: 0.2rem;
+}
+
+.single-price {
+    color: #172033;
+    font-size: 0.95rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.single-price.unavailable {
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.single-cart-button {
+    align-items: center;
+    display: inline-flex;
+    height: 34px;
+    justify-content: center;
+    width: 38px;
 }
 
 .stat-grid {
@@ -301,11 +396,20 @@ onMounted(loadCard)
 
 .stat-tile strong {
     color: #172033;
-    display: block;
+    align-items: center;
+    display: inline-flex;
+    gap: 0.35rem;
     font-size: 1rem;
     font-weight: 700;
     line-height: 1.25;
     overflow-wrap: anywhere;
+}
+
+.stat-icon {
+    flex: 0 0 auto;
+    height: 18px;
+    object-fit: contain;
+    width: 18px;
 }
 
 .card-description {
@@ -447,6 +551,15 @@ onMounted(loadCard)
 
     .card-info-panel h1 {
         font-size: 1.8rem;
+    }
+
+    .card-title-row {
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .single-purchase {
+        padding-top: 0;
     }
 
     .stat-grid {

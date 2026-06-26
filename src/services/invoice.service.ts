@@ -1,16 +1,20 @@
 import { ApiService } from "./api.service";
 
 export class InvoiceService {
-    static async addSetToCart(setName: string) {
-        return await ApiService.useAxios( `/invoice/cart/add/${encodeURIComponent(setName)}`, 'put')
+     static async getCart() {
+        return await ApiService.useAxios('/invoice/cart')
     }
 
     static async getInvoiceDetails(id: number) {
         return await ApiService.useAxios(`/invoice/${id}`)
     }
 
-    static async getCart() {
-        return await ApiService.useAxios('/invoice/cart')
+    static async addSetToCart(setName: string) {
+        return await ApiService.useAxios( `/invoice/cart/set/${encodeURIComponent(setName)}`, 'put')
+    }
+
+    static async addCardToCart(cardId: number) {
+        return await ApiService.useAxios( `/invoice/cart/card/${encodeURIComponent(cardId)}`, 'put')
     }
 
     static async pay() {

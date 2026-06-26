@@ -156,7 +156,6 @@ onMounted(async () => {
                                     <th>Invoice</th>
                                     <th>Paid at</th>
                                     <th>Items</th>
-                                    <th>Status</th>
                                     <th class="text-end">Total</th>
                                     <th class="invoice-action-column"><span class="visually-hidden">Open</span></th>
                                 </tr>
@@ -166,7 +165,6 @@ onMounted(async () => {
                                     <td class="fw-semibold">#{{ String(invoice.id).padStart(6, '0') }}</td>
                                     <td>{{ formatDate(invoice.pursTime) }}</td>
                                     <td>{{ getInvoiceItemCount(invoice) }}</td>
-                                    <td><span class="paid-badge">Paid</span></td>
                                     <td class="text-end fw-bold">{{ formatCurrency(getInvoiceTotal(invoice)) }}</td>
                                     <td class="text-end">
                                         <RouterLink

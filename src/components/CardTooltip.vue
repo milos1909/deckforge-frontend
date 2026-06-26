@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getCardImage, setFallbackImage } from '@/helpers/image'
+import { formatCardStatValue, getAttributeIcon, getRaceIcon } from '@/helpers/card'
 import type { CardModel } from '@/models/card.model'
 import { computed, ref } from 'vue'
 
@@ -15,22 +16,31 @@ const tooltipStyle = ref({
 
 const statLine = computed(() => {
   const stats: string[] = []
+  const isLinkMonster = props.card.type.includes('Link')
 
-  if (props.card.attribute) stats.push(props.card.attribute)
-  if (props.card.level) stats.push(`Level ${props.card.level}`)
-  if (props.card.linkval) stats.push(`Link ${props.card.linkval}`)
-  if (props.card.atk !== null) stats.push(`ATK ${props.card.atk}`)
-  if (props.card.def !== null) stats.push(`DEF ${props.card.def}`)
+  if (props.card.atk != null) stats.push(`ATK/${formatCardStatValue('ATK', props.card.atk)}`)
+  if (!isLinkMonster && props.card.def != null) stats.push(`DEF/${formatCardStatValue('DEF', props.card.def)}`)
+  if (props.card.linkval != null) stats.push(`Link-${props.card.linkval}`)
 
-  return stats.join(' / ')
+  return stats.join(' ')
 })
 
-const detailChips = computed(() => {
-  return [
-    props.card.race,
-    props.card.archetype
-  ].filter(Boolean)
+const raceIcon = computed(() => {
+  return getRaceIcon(props.card.race)
 })
+
+const attributeIcon = computed(() => {
+  return getAttributeIcon(props.card.attribute)
+})
+
+const showLevel = computed(() => {
+  return !props.card.type.includes('Link') && props.card.level != null
+})
+
+function hideBrokenIcon(event: Event) {
+  const image = event.target as HTMLImageElement
+  image.style.display = 'none'
+}
 
 function showTooltip(event: MouseEvent) {
   const target = event.currentTarget as HTMLElement
@@ -65,16 +75,28 @@ function hideTooltip() {
 
       <div class="tooltip-details">
         <div class="tooltip-heading">
-          <strong>{{ card.name }}</strong>
-          <span>{{ card.type }}</span>
+          <div class="tooltip-title-block">
+            <strong>{{ card.name }}</strong>
+            <span class="tooltip-type-line">
+              [{{ card.race }}<img v-if="raceIcon" :src="raceIcon" :alt="card.race" class="race-icon" @error="hideBrokenIcon">/{{ card.type }}]
+            </span>
+          </div>
+
+          <div v-if="card.attribute || showLevel" class="tooltip-meta-block">
+            <span v-if="card.attribute" class="tooltip-meta-item">
+              <img :src="attributeIcon!" :alt="card.attribute" @error="hideBrokenIcon">
+              {{ card.attribute }}
+            </span>
+
+            <span v-if="showLevel" class="tooltip-meta-item">
+              <img src="/level.png" alt="Level" @error="hideBrokenIcon">
+              {{ card.level }}
+            </span>
+          </div>
         </div>
 
         <div v-if="statLine" class="tooltip-stats">
           {{ statLine }}
-        </div>
-
-        <div v-if="detailChips.length" class="tooltip-chips">
-          <span v-for="detail in detailChips" :key="detail">{{ detail }}</span>
         </div>
 
         <p>{{ card.description }}</p>
@@ -92,11 +114,11 @@ function hideTooltip() {
 .card-tooltip {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 1.1rem;
   max-width: 540px;
   max-height: calc(100vh - 24px);
   overflow-y: auto;
-  padding: 1rem;
+  padding: 1rem 1.05rem;
   pointer-events: none;
   position: fixed;
   text-align: left;
@@ -106,31 +128,90 @@ function hideTooltip() {
 
 .tooltip-image {
   height: auto;
+  flex: 0 0 auto;
   width: 154px;
 }
 
 .tooltip-details {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.7rem;
   min-width: 0;
 }
 
 .tooltip-heading {
-  display: grid;
-  gap: 0.2rem;
+  align-items: start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
 }
 
 .tooltip-heading strong {
   color: #ffffff;
-  font-size: 0.95rem;
-  line-height: 1.2;
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
-.tooltip-heading span,
 .tooltip-stats {
-  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #e5e7eb;
+  display: inline-flex;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0.35rem 0.5rem;
+  width: fit-content;
+}
+
+.tooltip-title-block {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.tooltip-type-line {
+  align-items: center;
+  color: #b8c2d2;
+  display: inline-flex;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  gap: 0.15rem;
+  line-height: 1.35;
+}
+
+.race-icon {
+  height: 14px;
+  width: 14px;
+  object-fit: contain;
+}
+
+.tooltip-meta-block {
+  align-items: flex-end;
+  color: #d8dee8;
+  display: grid;
+  flex: 0 0 auto;
   font-size: 0.78rem;
-  line-height: 1.3;
+  font-weight: 600;
+  gap: 0.3rem;
+  justify-items: end;
+  line-height: 1.2;
+  text-align: right;
+  padding-top: 0.05rem;
+}
+
+.tooltip-meta-item {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.tooltip-meta-item img {
+  height: 16px;
+  object-fit: contain;
+  width: 16px;
 }
 
 .tooltip-chips {
@@ -150,10 +231,13 @@ function hideTooltip() {
 }
 
 .card-tooltip p {
-  color: #e5e7eb;
-  font-size: 0.78rem;
-  line-height: 1.4;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #eef2f7;
+  font-size: 0.82rem;
+  line-height: 1.58;
   margin: 0;
+  padding-top: 0.65rem;
+  white-space: pre-line;
 }
 
 @media (max-width: 575.98px) {
